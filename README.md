@@ -245,14 +245,16 @@ These rules shaped later work: products have no technical specs, the roadmap has
 
 ## Status and next steps
 
-**How far I got:** the MVP is live, with one follow-up release. The backlog hasn't been started. The company is still at the concept stage, and every product is in development.
+**How far I got:** the MVP is live, with three follow-up releases. The backlog hasn't been started. The company is still at the concept stage, and every product is in development.
 
-**Releases** (merge commits on `main`):
+**Releases** (Git tags on `main`; v0.1.0 and v0.1.1 were tagged afterwards):
 
-| Version | Commit    | What changed                                                         |
-| ------- | --------- | -------------------------------------------------------------------- |
-| v0.1.0  | `58d858c` | MVP                                                                  |
-| v0.1.1  | `55ae23b` | Routing fix: unknown paths now return a 404 instead of the home page |
+| Version | Commit     | What changed                                                               |
+| ------- | ---------- | -------------------------------------------------------------------------- |
+| v0.1.0  | `58d858c`  | MVP                                                                        |
+| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page       |
+| v0.1.2  | `160fb66`  | README in the course's 5 sections                                          |
+| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps |
 
 **What works:**
 
@@ -272,5 +274,4 @@ After that:
 
 1. Test the form's email step on a desktop with an email app installed.
 2. Add a favicon and `robots.txt`.
-3. Add Git tags at the next release, and update the `package.json` version, which still says 0.0.0.
-4. Work through the rest of the backlog, adding the calculator only once real figures exist.
+3. Work through the rest of the backlog, adding the calculator only once real figures exist.
