@@ -37,7 +37,7 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 - **Work with us:** what the company offers customers, investors and partners.
 - **Roadmap:** the current concept stage and the next steps, without invented dates.
 - **Team:** the founder and co-founder.
-- **Contact:** a validated form that opens a pre-filled email, plus a direct email link.
+- **Contact:** a validated form that sends the message from the website, with clear success and error messages and basic spam protection, plus a direct email link.
 
 ### Backlog
 
@@ -267,29 +267,31 @@ These rules shaped later work: products have no technical specs, the roadmap has
 
 ## Status and next steps
 
-**How far I got:** the MVP is live, with three follow-up releases. From the backlog, only US-09 (form backend) is built. The company is still at the concept stage, and every product is in development.
+**How far I got:** the MVP is live, with four follow-up releases. From the backlog, only US-09 (form backend) is built, released in v0.1.4. The company is still at the concept stage, and every product is in development.
 
 **Releases** (Git tags on `main`; v0.1.0 and v0.1.1 were tagged afterwards):
 
-| Version | Commit     | What changed                                                               |
-| ------- | ---------- | -------------------------------------------------------------------------- |
-| v0.1.0  | `58d858c`  | MVP                                                                        |
-| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page       |
-| v0.1.2  | `160fb66`  | README in the course's 5 sections                                          |
-| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps |
+| Version | Commit     | What changed                                                                              |
+| ------- | ---------- | ----------------------------------------------------------------------------------------- |
+| v0.1.0  | `58d858c`  | MVP                                                                                       |
+| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page                      |
+| v0.1.2  | `160fb66`  | README in the course's 5 sections                                                         |
+| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps                |
+| v0.1.4  | tag v0.1.4 | Form backend (US-09): the contact form sends messages from the website, with no email app |
 
 **What works:**
 
 - The live site has all the MVP sections, and unknown paths return a 404.
-- On my phone, the form opened the email app with the fields filled in, and the message arrived.
-- All 158 tests in 12 files pass.
+- The form sends messages from the website itself. In local testing and on a Vercel preview, the message arrived in the company inbox.
+- When sending fails, the form shows a clear error message. I checked this locally with the API key missing.
+- All 207 tests in 13 files pass.
 
 **What doesn't work:**
 
 - A message can land in spam, as the first one did. Without its own domain, the form sends from Resend's test address, which makes this more likely.
 - The site has no favicon or `robots.txt`.
 
-**The natural next step:** release US-09 and send a test message from the live site on a phone and on a laptop.
+**The natural next step:** send a test message from the live site on a phone and on a laptop, to confirm the form works in production.
 
 After that:
 
