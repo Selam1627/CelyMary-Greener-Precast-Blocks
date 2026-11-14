@@ -91,8 +91,8 @@ The form posts to `/api/contact`, a Vercel function ([api/contact.ts](api/contac
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Selam1627/Cely-Precast-Blocks.git
-   cd Cely-Precast-Blocks
+   git clone https://github.com/Selam1627/CelyMary-Greener-Precast-Blocks.git
+   cd CelyMary-Greener-Precast-Blocks
    ```
 2. Copy the example environment file and fill in the values:
    ```bash
