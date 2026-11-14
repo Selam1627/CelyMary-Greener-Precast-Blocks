@@ -23,6 +23,12 @@ CelyMary Greener Precast Blocks is an early-stage company planning lower-carbon 
 
 Each MVP story answers a question a visitor needs answered: what is this, what will you make, what does it mean for me and who is behind it, and how do I reach you? Without any one of them, the visit can't end in an informed message. The backlog adds reach, depth or convenience, but the site works without it.
 
+### Built after the MVP
+
+| Story | What it covers                                                                       |
+| ----- | ------------------------------------------------------------------------------------ |
+| US-09 | Form backend: the contact form sends the message from the website, with no email app |
+
 ### What the live site has
 
 - **Hero:** the company name, tagline and buttons that lead to "Work with us" and "Contact".
@@ -41,7 +47,6 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 | US-06 | News and milestones                               |
 | US-07 | Carbon savings calculator, only with real figures |
 | US-08 | Separate pages                                    |
-| US-09 | Form backend                                      |
 
 ## How to run it
 
@@ -58,15 +63,27 @@ You don't need Node.js on your machine. Everything runs inside the container.
 
 Configuration is read from environment variables. `.env.example` lists every variable and is checked into the repository. Your own `.env` is git-ignored and must never be committed.
 
-| Variable             | Purpose                                                     |
-| -------------------- | ----------------------------------------------------------- |
-| `VITE_CONTACT_EMAIL` | Address the contact form sends its email to                 |
-| `DEV_PORT`           | Port on your computer for the dev server (default 5173)     |
-| `PREVIEW_PORT`       | Port on your computer for the preview server (default 4173) |
+| Variable             | Purpose                                                                           |
+| -------------------- | --------------------------------------------------------------------------------- |
+| `VITE_CONTACT_EMAIL` | Company inbox: receives the contact form and is shown as the direct address       |
+| `RESEND_API_KEY`     | **Secret.** [Resend](https://resend.com) API key the server uses to send the form |
+| `CONTACT_FROM_EMAIL` | Sender shown on contact form emails                                               |
+| `DEV_PORT`           | Port on your computer for the dev server (default 5173)                           |
+| `PREVIEW_PORT`       | Port on your computer for the preview server (default 4173)                       |
 
 `DEV_PORT` and `PREVIEW_PORT` are only read by docker compose, not by the website.
 
-Any variable that starts with `VITE_` ends up in the public JavaScript bundle. Never put secrets in one.
+Any variable that starts with `VITE_` ends up in the public JavaScript bundle. Never put secrets in one. `RESEND_API_KEY` and `CONTACT_FROM_EMAIL` are read only by the server code, so they never reach the browser.
+
+Without a verified domain, Resend only sends from its test address (`onboarding@resend.dev`, the default in `.env.example`) and only delivers to the address the Resend account was registered with. That address must be the same as `VITE_CONTACT_EMAIL`.
+
+### Contact form
+
+The form posts to `/api/contact`, a Vercel function ([api/contact.ts](api/contact.ts)) that checks the message again and sends it to `VITE_CONTACT_EMAIL` through Resend. The logic lives in [src/server/contactHandler.ts](src/server/contactHandler.ts).
+
+- **Spam protection:** a hidden field that people never see but many bots fill in, and a minimum time to fill in the form. Messages caught by either are dropped without telling the sender. The server also re-checks every field and limits the request size.
+- **Local testing:** `npm run dev` answers `/api/contact` with the same code, reading the variables from `.env`, so you don't need the Vercel CLI. With a real `RESEND_API_KEY` in `.env`, the form sends real emails. `npm run preview` serves only the static site, so the form can't send from there.
+- **Errors:** the server logs why a message couldn't be sent (a missing variable, or Resend's reason), never the API key. On Vercel, these appear in the project's function logs.
 
 ### Start with Docker
 
@@ -137,6 +154,8 @@ docker compose run --rm app npm run test
 .
 ├── .devcontainer/
 │   └── devcontainer.json      # VS Code DevContainer config
+├── api/
+│   └── contact.ts             # Vercel function: sends the contact form
 ├── docs/                      # Project documentation
 ├── public/                    # Static files copied as-is (favicon, images)
 ├── src/
@@ -145,6 +164,7 @@ docker compose run --rm app npm run test
 │   │   ├── sections/          # One component per page section
 │   │   └── ui/                # Small reusable pieces (buttons, cards…)
 │   ├── content/               # Site text and data (products, roadmap, team)
+│   ├── server/                # Server-only code (contact form handler)
 │   ├── utils/                 # Plain TypeScript helpers (contact form rules)
 │   ├── App.vue                # Page layout: puts the sections in order
 │   ├── env.d.ts               # Types for environment variables
@@ -158,7 +178,7 @@ docker compose run --rm app npm run test
 ├── vercel.json                # Vercel build settings
 ├── vite.config.ts
 ├── vitest.config.ts
-├── tsconfig*.json             # TypeScript configs (app, node, vitest)
+├── tsconfig*.json             # TypeScript configs (app, api, node, vitest)
 ├── eslint.config.js
 ├── .prettierrc.json
 ├── CLAUDE.md                  # Guidance for Claude Code
@@ -167,7 +187,9 @@ docker compose run --rm app npm run test
 
 ### Deployment
 
-Vercel builds the site with `npm run build` and serves the static files from `dist/`. The site has one page and no router, so unknown paths return a 404. Set the environment variables in the Vercel project settings.
+Vercel builds the site with `npm run build` and serves the static files from `dist/`. The site has one page and no router, so unknown paths return a 404. Vercel also turns each file in `api/` into a serverless function, so `/api/contact` is the only server route.
+
+Set `VITE_CONTACT_EMAIL`, `RESEND_API_KEY` and `CONTACT_FROM_EMAIL` in the Vercel project settings (**Settings → Environment Variables**) for Production and Preview. Redeploy after changing them.
 
 ### Contributing
 
@@ -245,7 +267,7 @@ These rules shaped later work: products have no technical specs, the roadmap has
 
 ## Status and next steps
 
-**How far I got:** the MVP is live, with three follow-up releases. The backlog hasn't been started. The company is still at the concept stage, and every product is in development.
+**How far I got:** the MVP is live, with three follow-up releases. From the backlog, only US-09 (form backend) is built. The company is still at the concept stage, and every product is in development.
 
 **Releases** (Git tags on `main`; v0.1.0 and v0.1.1 were tagged afterwards):
 
@@ -264,14 +286,14 @@ These rules shaped later work: products have no technical specs, the roadmap has
 
 **What doesn't work:**
 
-- The form needs an email app on the visitor's device, because there is no backend. On my laptop, which has no email app set up, nothing opened.
-- A message can land in spam, as the first one did.
+- A message can land in spam, as the first one did. Without its own domain, the form sends from Resend's test address, which makes this more likely.
 - The site has no favicon or `robots.txt`.
 
-**The natural next step:** build US-09 (form backend), so visitors don't need an email app.
+**The natural next step:** release US-09 and send a test message from the live site on a phone and on a laptop.
 
 After that:
 
-1. Test the form's email step on a desktop with an email app installed.
+1. Once the company has its own domain, verify it in Resend so the form sends from the company's address.
 2. Add a favicon and `robots.txt`.
-3. Work through the rest of the backlog, adding the calculator only once real figures exist.
+3. Review the Vercel plan when the company starts operating, because the free Hobby plan is for non-commercial use.
+4. Work through the rest of the backlog, adding the calculator only once real figures exist.
