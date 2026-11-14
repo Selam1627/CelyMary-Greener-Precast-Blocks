@@ -18,6 +18,7 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 - ESLint + Prettier
 - DevContainer with Docker / docker compose
 - Vercel: static build to `dist/`, configured in `vercel.json`. No SPA fallback: the site has one page and no router, so unknown paths return a 404
+- One Vercel serverless function, `api/contact.ts` (`POST /api/contact`), sends the contact form to the company inbox through [Resend](https://resend.com). In development, `vite.config.ts` serves the same route, so the form works with `npm run dev`
 
 ## Working rules
 
@@ -45,6 +46,7 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 - Never write secrets in the code. Use environment variables.
 - `.env` is in `.gitignore`. `.env.example` is versioned and lists every variable with placeholder values only.
 - Variables that start with `VITE_` are bundled into public client code. They must never hold secrets.
+- Server-only secrets such as `RESEND_API_KEY` have no `VITE_` prefix and are read only by server code (`api/`, `src/server/`). They are set in `.env` locally and in the Vercel project settings. Never log them.
 
 ### Confidentiality (public repository)
 
@@ -62,6 +64,8 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 
 - Components: `<script setup lang="ts">`, PascalCase file names, one component per page section in `src/components/sections/` (for example `HeroSection.vue`).
 - Reusable small pieces go in `src/components/ui/`.
+- Server code goes in `src/server/` and must never be imported by website code. Files in `api/` stay thin entry points that call it.
+- Vercel runs `api/` as native ES modules without the `@/` alias. So `src/server/` and any website code it imports (such as `src/utils/contactForm.ts` and `src/content/`) use relative imports ending in `.js`. `tsconfig.api.json` checks this.
 - Keep site text and data (products, roadmap, team) in typed files in `src/content/`, not hard-coded in templates. This makes the Spanish version (US-05) easier later.
 - Style with Tailwind utility classes. Don't add UI libraries or other dependencies without asking.
 - Mobile-first, responsive layout. Use semantic HTML and accessible markup: labelled form fields, alt text, keyboard navigation and enough color contrast.
@@ -79,7 +83,11 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 - **US-01 — Hero and "Our solution":** headline, short value proposition, call to action to contact. "Our solution" covers lower carbon, recycled industrial materials and local production.
 - **US-02 — Products:** the planned range: standard building blocks, solar panel ballast blocks, paving blocks, retaining wall and landscaping blocks, and kerbs and edging. Each is labelled **"in development"**. **No technical specs.**
 - **US-03 — For customers / investors / partners:** what we offer each group, the company's current stage and roadmap, and the team.
-- **US-04 — Contact form:** fields for name, email, visitor type, product of interest and message. On submit, it opens a pre-filled email (`mailto:`) to the address in `VITE_CONTACT_EMAIL`. No backend.
+- **US-04 — Contact form:** fields for name, email, visitor type, product of interest and message. In the MVP, it opened a pre-filled email (`mailto:`) to the address in `VITE_CONTACT_EMAIL`. US-09 replaced that.
+
+### Built after the MVP
+
+- **US-09 — Form backend:** the contact form sends the message from the website itself through `/api/contact`, with no email app, to the address in `VITE_CONTACT_EMAIL`. It keeps the fields and validation, and shows a clear success or error message. The "Or write to us directly at…" link stays as a fallback. Spam protection: a hidden trap field, a minimum fill time, and server-side checks.
 
 ### Backlog
 
@@ -87,4 +95,3 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 - **US-06 — News and milestones.**
 - **US-07 — Carbon savings calculator.** Do not build it without real, user-provided figures (see Honesty).
 - **US-08 — Separate pages.**
-- **US-09 — Form backend.**

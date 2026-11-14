@@ -1,0 +1,18 @@
+{
+  // The Vercel function in api/ and the server code it imports. Checked as
+  // native Node.js ES modules, like Vercel runs them: relative imports must
+  // end in ".js" and the "@/" alias is not available.
+  "include": ["api/**/*.ts"],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.api.tsbuildinfo",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true
+  }
+}
