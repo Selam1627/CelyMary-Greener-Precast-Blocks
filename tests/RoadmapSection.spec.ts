@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import RoadmapSection from '@/components/sections/RoadmapSection.vue'
-import { roadmap, type RoadmapContent } from '@/content/roadmap'
+import { en } from '@/content/locales/en'
+import type { RoadmapContent } from '@/content/types'
 
-/** Mounts RoadmapSection with a replacement for src/content/roadmap.ts. */
+const { roadmap } = en
+
+/** Mounts RoadmapSection with replacement English texts for this section. */
 async function mountWithContent(content: RoadmapContent) {
   vi.resetModules()
-  vi.doMock('@/content/roadmap', () => ({ roadmap: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, roadmap: content } }))
   const { default: Component } = await import('@/components/sections/RoadmapSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/roadmap')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 

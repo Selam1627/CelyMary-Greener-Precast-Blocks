@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { contact } from '@/content/contact'
+import { languages } from '@/content/languages'
+import { siteContent } from '@/content/siteContent'
 import {
-  buildEmailSubject,
-  buildEmailText,
   contactEndpoint,
   isValidEmail,
   maxLengths,
@@ -15,8 +14,8 @@ import {
 const validValues: ContactFormValues = {
   name: 'Test Visitor',
   email: 'visitor@example.com',
-  visitorType: 'Architect',
-  product: 'Paving blocks',
+  visitorType: 'architect',
+  product: 'paving-blocks',
   message: 'Test message.',
 }
 
@@ -48,10 +47,10 @@ describe('validateContactForm', () => {
       })
 
       expect(errors).toEqual({
-        name: contact.errors.nameRequired,
-        email: contact.errors.emailRequired,
-        visitorType: contact.errors.visitorTypeRequired,
-        message: contact.errors.messageRequired,
+        name: 'nameRequired',
+        email: 'emailRequired',
+        visitorType: 'visitorTypeRequired',
+        message: 'messageRequired',
       })
     })
 
@@ -64,16 +63,16 @@ describe('validateContactForm', () => {
       })
 
       expect(errors).toEqual({
-        name: contact.errors.nameRequired,
-        email: contact.errors.emailRequired,
-        message: contact.errors.messageRequired,
+        name: 'nameRequired',
+        email: 'emailRequired',
+        message: 'messageRequired',
       })
     })
 
     it('uses a different message for a badly formatted email', () => {
       const errors = validateContactForm({ ...validValues, email: 'not-an-email' })
 
-      expect(errors).toEqual({ email: contact.errors.emailInvalid })
+      expect(errors).toEqual({ email: 'emailInvalid' })
     })
 
     it('rejects a name, email or message that is too long', () => {
@@ -85,9 +84,9 @@ describe('validateContactForm', () => {
       })
 
       expect(errors).toEqual({
-        name: contact.errors.nameTooLong,
-        email: contact.errors.emailInvalid,
-        message: contact.errors.messageTooLong,
+        name: 'nameTooLong',
+        email: 'emailInvalid',
+        message: 'messageTooLong',
       })
     })
   })
@@ -112,10 +111,15 @@ describe('validateContactForm', () => {
       expect(errors).toEqual({})
     })
 
-    it('states the same limits in the error messages as it checks', () => {
-      expect(contact.errors.nameTooLong).toContain(maxLengths.name.toLocaleString('en-US'))
-      expect(contact.errors.messageTooLong).toContain(maxLengths.message.toLocaleString('en-US'))
-    })
+    it.each(languages.map((language) => language.code))(
+      'states the same limits in the %s error messages as it checks',
+      (code) => {
+        const { errors } = siteContent[code].contact
+
+        expect(errors.nameTooLong).toContain(maxLengths.name.toLocaleString(code))
+        expect(errors.messageTooLong).toContain(maxLengths.message.toLocaleString(code))
+      },
+    )
   })
 })
 
@@ -144,74 +148,13 @@ describe('isValidEmail', () => {
   })
 })
 
-describe('buildEmailSubject', () => {
-  it('names the visitor', () => {
-    expect(buildEmailSubject(validValues)).toBe('Website enquiry from Test Visitor')
-  })
-
-  it('keeps the subject on one line, whatever the name contains', () => {
-    const subject = buildEmailSubject({ ...validValues, name: '  Test\r\nBcc: other@example.com ' })
-
-    expect(subject).toBe('Website enquiry from Test Bcc: other@example.com')
-    expect(subject).not.toMatch(/[\r\n]/)
-  })
-})
-
-describe('buildEmailText', () => {
-  describe('normal cases', () => {
-    it('lists the details, then the message', () => {
-      expect(buildEmailText(validValues)).toBe(
-        [
-          'Name: Test Visitor',
-          'Email: visitor@example.com',
-          'Visitor type: Architect',
-          'Product of interest: Paving blocks',
-          '',
-          'Test message.',
-        ].join('\n'),
-      )
-    })
-  })
-
-  describe('edge cases', () => {
-    it('leaves out the product line when no product is chosen', () => {
-      expect(buildEmailText({ ...validValues, product: '' })).not.toContain('Product of interest')
-    })
-
-    it('removes spaces around what the visitor typed', () => {
-      const text = buildEmailText({
-        ...validValues,
-        name: '  Test Visitor  ',
-        email: '  visitor@example.com  ',
-        message: '  Test message.  ',
-      })
-
-      expect(text).toContain('Name: Test Visitor\n')
-      expect(text).toContain('Email: visitor@example.com\n')
-      expect(text.endsWith('\n\nTest message.')).toBe(true)
-    })
-
-    it('keeps the line breaks in a message, whatever kind they are', () => {
-      const text = buildEmailText({ ...validValues, message: 'One\r\nTwo\rThree\nFour' })
-
-      expect(text.endsWith('One\nTwo\nThree\nFour')).toBe(true)
-    })
-
-    it('keeps accents and symbols intact', () => {
-      const message = 'Hola, ¿cómo están? 100% + más & "otros" #1 <b>'
-
-      expect(buildEmailText({ ...validValues, message })).toContain(message)
-    })
-  })
-})
-
 describe('sendContactMessage', () => {
   describe('normal cases', () => {
     it('posts the form and the spam check as JSON to the contact endpoint', async () => {
       const fetchMock = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }))
       vi.stubGlobal('fetch', fetchMock)
 
-      const sent = await sendContactMessage(validValues, spamCheck)
+      const sent = await sendContactMessage(validValues, spamCheck, 'es')
 
       expect(sent).toBe(true)
       expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -219,7 +162,7 @@ describe('sendContactMessage', () => {
       expect(url).toBe(contactEndpoint)
       expect(init.method).toBe('POST')
       expect(init.headers).toEqual({ 'Content-Type': 'application/json' })
-      expect(JSON.parse(init.body)).toEqual({ ...validValues, ...spamCheck })
+      expect(JSON.parse(init.body)).toEqual({ ...validValues, ...spamCheck, language: 'es' })
     })
   })
 
@@ -227,13 +170,13 @@ describe('sendContactMessage', () => {
     it.each([400, 500, 502])('reports failure when the server answers %i', async (status) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"ok":false}', { status })))
 
-      expect(await sendContactMessage(validValues, spamCheck)).toBe(false)
+      expect(await sendContactMessage(validValues, spamCheck, 'en')).toBe(false)
     })
 
     it('reports failure when the server cannot be reached', async () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
 
-      expect(await sendContactMessage(validValues, spamCheck)).toBe(false)
+      expect(await sendContactMessage(validValues, spamCheck, 'en')).toBe(false)
     })
   })
 })

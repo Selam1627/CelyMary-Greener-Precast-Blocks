@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import SolutionSection from '@/components/sections/SolutionSection.vue'
-import { solution, type SolutionContent } from '@/content/solution'
+import { en } from '@/content/locales/en'
+import type { SolutionContent } from '@/content/types'
 
-/** Mounts SolutionSection with a replacement for src/content/solution.ts. */
+const { solution } = en
+
+/** Mounts SolutionSection with replacement English texts for this section. */
 async function mountWithContent(content: SolutionContent) {
   vi.resetModules()
-  vi.doMock('@/content/solution', () => ({ solution: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, solution: content } }))
   const { default: Component } = await import('@/components/sections/SolutionSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/solution')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 

@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { audiences } from '@/content/audiences'
+import { computed } from 'vue'
+
+import { useLanguage } from '@/composables/useLanguage'
+
+const { content } = useLanguage()
+const audiences = computed(() => content.value.audiences)
 </script>
 
 <template>

@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import HeroSection from '@/components/sections/HeroSection.vue'
-import { hero, type HeroContent } from '@/content/hero'
+import { en } from '@/content/locales/en'
+import type { HeroContent } from '@/content/types'
 
-/** Mounts HeroSection with a replacement for src/content/hero.ts. */
+const { hero } = en
+
+/** Mounts HeroSection with replacement English texts for this section. */
 async function mountWithContent(content: HeroContent) {
   vi.resetModules()
-  vi.doMock('@/content/hero', () => ({ hero: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, hero: content } }))
   const { default: Component } = await import('@/components/sections/HeroSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/hero')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 
@@ -88,6 +91,23 @@ describe('HeroSection', () => {
       expect(wrapper.get('h1').text()).toBe('Test Company')
       expect(wrapper.text()).toContain('Test tagline.')
       expect(wrapper.get('a').attributes('href')).toBe('#test')
+    })
+
+    it("shows no Ge'ez line in English", () => {
+      const wrapper = mount(HeroSection)
+
+      expect(wrapper.get('h1').text()).toBe('CelyMary Greener Precast Blocks')
+      expect(wrapper.get('h1').find('span').exists()).toBe(false)
+    })
+
+    it("shows the Ge'ez name as a second line of the main heading, when there is one", async () => {
+      const wrapper = await mountWithContent({ ...hero, companyNameGeez: 'ሰሊሜሪ ሓምለዋይ ብሎኬት' })
+      const h1 = wrapper.get('h1')
+
+      expect(h1.text()).toContain('CelyMary Greener Precast Blocks')
+      expect(h1.get('span').text()).toBe('ሰሊሜሪ ሓምለዋይ ብሎኬት')
+      expect(h1.get('span').classes()).toContain('block')
+      expect(wrapper.findAll('h1')).toHaveLength(1)
     })
 
     it('renders no buttons when the content file lists no actions', async () => {

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { nextTick, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 
-import { contact } from '@/content/contact'
-import { products } from '@/content/products'
+import { useLanguage } from '@/composables/useLanguage'
 import {
   requiredFields,
   sendContactMessage,
@@ -13,6 +12,10 @@ import {
 } from '@/utils/contactForm'
 
 const contactEmail = (import.meta.env.VITE_CONTACT_EMAIL ?? '').trim()
+
+const { content, language } = useLanguage()
+const contact = computed(() => content.value.contact)
+const products = computed(() => content.value.products)
 
 const fieldClass =
   'mt-1 block min-h-11 w-full rounded-md border border-stone-500 bg-white px-3 py-2 text-base text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-invalid:border-red-700'
@@ -41,6 +44,7 @@ const status = ref<SendStatus>('idle')
 const spamTrap = ref('')
 let shownAt = Date.now()
 
+// Errors are stored as keys, so a showing error follows the language switcher.
 // Once an error is showing, keep it up to date as the visitor fixes the field.
 // Fields without an error stay quiet until the next time Send is pressed.
 watch(values, () => {
@@ -72,6 +76,7 @@ async function handleSubmit() {
   const sent = await sendContactMessage(
     { ...values },
     { website: spamTrap.value, elapsedMs: Date.now() - shownAt },
+    language.value,
   )
 
   if (sent) {
@@ -111,7 +116,7 @@ async function handleSubmit() {
             :aria-describedby="errors.name ? `${fieldIds.name}-error` : undefined"
           />
           <p v-if="errors.name" :id="`${fieldIds.name}-error`" role="alert" :class="errorClass">
-            {{ errors.name }}
+            {{ contact.errors[errors.name] }}
           </p>
         </div>
 
@@ -129,7 +134,7 @@ async function handleSubmit() {
             :aria-describedby="errors.email ? `${fieldIds.email}-error` : undefined"
           />
           <p v-if="errors.email" :id="`${fieldIds.email}-error`" role="alert" :class="errorClass">
-            {{ errors.email }}
+            {{ contact.errors[errors.email] }}
           </p>
         </div>
 
@@ -147,8 +152,8 @@ async function handleSubmit() {
             :aria-describedby="errors.visitorType ? `${fieldIds.visitorType}-error` : undefined"
           >
             <option value="" disabled>{{ contact.visitorTypePrompt }}</option>
-            <option v-for="type in contact.visitorTypes" :key="type" :value="type">
-              {{ type }}
+            <option v-for="type in contact.visitorTypes" :key="type.id" :value="type.id">
+              {{ type.label }}
             </option>
           </select>
           <p
@@ -157,7 +162,7 @@ async function handleSubmit() {
             role="alert"
             :class="errorClass"
           >
-            {{ errors.visitorType }}
+            {{ contact.errors[errors.visitorType] }}
           </p>
         </div>
 
@@ -165,7 +170,7 @@ async function handleSubmit() {
           <label for="contact-product" :class="labelClass">{{ contact.labels.product }}</label>
           <select id="contact-product" v-model="values.product" name="product" :class="fieldClass">
             <option value="">{{ contact.productPrompt }}</option>
-            <option v-for="product in products.items" :key="product.id" :value="product.name">
+            <option v-for="product in products.items" :key="product.id" :value="product.id">
               {{ product.name }}
             </option>
           </select>
@@ -189,7 +194,7 @@ async function handleSubmit() {
             role="alert"
             :class="errorClass"
           >
-            {{ errors.message }}
+            {{ contact.errors[errors.message] }}
           </p>
         </div>
 

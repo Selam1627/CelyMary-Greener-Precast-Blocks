@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { team } from '@/content/team'
+import { computed } from 'vue'
+
+import { useLanguage } from '@/composables/useLanguage'
+
+const { content } = useLanguage()
+const team = computed(() => content.value.team)
 </script>
 
 <template>

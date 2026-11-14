@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import ProductIcon from '@/components/ui/ProductIcon.vue'
-import { products } from '@/content/products'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { content } = useLanguage()
+const products = computed(() => content.value.products)
 </script>
 
 <template>
