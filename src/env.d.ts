@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Address the contact form opens a pre-filled email to. Public: bundled into the site. */
+  /** Company inbox, shown as the direct contact address. Public: bundled into the site. */
   readonly VITE_CONTACT_EMAIL?: string
 }
 

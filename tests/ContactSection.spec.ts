@@ -1,18 +1,21 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ContactSection from '@/components/sections/ContactSection.vue'
 import { contact } from '@/content/contact'
 import { products } from '@/content/products'
-import { openEmail } from '@/utils/contactForm'
+import { sendContactMessage } from '@/utils/contactForm'
 
-// Keep the real validation and link building; only opening the email app is faked.
+// Keep the real validation; only the request to the server is faked.
 vi.mock('@/utils/contactForm', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/contactForm')>()),
-  openEmail: vi.fn(),
+  sendContactMessage: vi.fn(),
 }))
 
 const testAddress = 'contact@example.com'
+
+/** The visible fields; the hidden spam trap is left out. */
+const visibleFields = 'input:not(#contact-website), select, textarea'
 
 /** Mounted on the page, because moving keyboard focus needs a real document. */
 function mountForm() {
@@ -28,22 +31,32 @@ async function fillInRequiredFields(wrapper: Wrapper) {
   await wrapper.get('#contact-message').setValue('Test message.')
 }
 
+/** Presses Send and waits until the (faked) server has answered. */
 async function submit(wrapper: Wrapper) {
   await wrapper.get('form').trigger('submit')
-  await wrapper.vm.$nextTick()
+  await flushPromises()
 }
 
 function optionsOf(wrapper: Wrapper, selector: string) {
   return wrapper.get(selector).findAll('option')
 }
 
+function statusText(wrapper: Wrapper) {
+  return wrapper.get('[role="status"]').text()
+}
+
+function valueOf(wrapper: Wrapper, selector: string) {
+  return (wrapper.get(selector).element as HTMLInputElement).value
+}
+
 beforeEach(() => {
   vi.stubEnv('VITE_CONTACT_EMAIL', testAddress)
-  vi.mocked(openEmail).mockClear()
+  vi.mocked(sendContactMessage).mockReset().mockResolvedValue(true)
 })
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.restoreAllMocks()
   document.body.innerHTML = ''
 })
 
@@ -61,7 +74,8 @@ describe('ContactSection', () => {
       const wrapper = mountForm()
       const fields = wrapper.findAll('input, select, textarea')
 
-      expect(fields).toHaveLength(5)
+      // Five visible fields, plus the hidden spam trap.
+      expect(fields).toHaveLength(6)
       for (const field of fields) {
         const label = wrapper.get(`label[for="${field.attributes('id')}"]`)
         expect(label.text()).not.toBe('')
@@ -97,30 +111,47 @@ describe('ContactSection', () => {
       )
     })
 
-    it('opens one pre-filled email to the configured address on submit', async () => {
+    it('sends what the visitor wrote to the server once, with an empty spam trap', async () => {
       const wrapper = mountForm()
       await fillInRequiredFields(wrapper)
       await wrapper.get('#contact-product').setValue('Paving blocks')
 
       await submit(wrapper)
 
-      expect(openEmail).toHaveBeenCalledTimes(1)
-      const url = new URL(vi.mocked(openEmail).mock.calls[0]![0])
-      expect(url.protocol).toBe('mailto:')
-      expect(url.pathname).toBe(testAddress)
-      expect(url.searchParams.get('subject')).toBe('Website enquiry from Test Visitor')
-      expect(url.searchParams.get('body')).toContain('Visitor type: Architect')
-      expect(url.searchParams.get('body')).toContain('Product of interest: Paving blocks')
-      expect(url.searchParams.get('body')).toContain('Test message.')
+      expect(sendContactMessage).toHaveBeenCalledTimes(1)
+      expect(sendContactMessage).toHaveBeenCalledWith(
+        {
+          name: 'Test Visitor',
+          email: 'visitor@example.com',
+          visitorType: 'Architect',
+          product: 'Paving blocks',
+          message: 'Test message.',
+        },
+        { website: '', elapsedMs: expect.any(Number) },
+      )
     })
 
-    it('opens the email without a product, because it is optional', async () => {
+    it('sends without a product, because it is optional', async () => {
       const wrapper = mountForm()
       await fillInRequiredFields(wrapper)
 
       await submit(wrapper)
 
-      expect(openEmail).toHaveBeenCalledTimes(1)
+      expect(sendContactMessage).toHaveBeenCalledTimes(1)
+      expect(vi.mocked(sendContactMessage).mock.calls[0]![0].product).toBe('')
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    })
+
+    it('thanks the visitor and clears the form once the message is sent', async () => {
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      await submit(wrapper)
+
+      expect(statusText(wrapper)).toBe(contact.successMessage)
+      for (const selector of ['#contact-name', '#contact-email', '#contact-message']) {
+        expect(valueOf(wrapper, selector)).toBe('')
+      }
       expect(wrapper.find('[role="alert"]').exists()).toBe(false)
     })
 
@@ -137,11 +168,14 @@ describe('ContactSection', () => {
   })
 
   describe('expected errors', () => {
-    it('shows no errors before the visitor presses Send', () => {
-      expect(mountForm().find('[role="alert"]').exists()).toBe(false)
+    it('shows no errors or status before the visitor presses Send', () => {
+      const wrapper = mountForm()
+
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+      expect(statusText(wrapper)).toBe('')
     })
 
-    it('shows a clear error for each required field and opens no email', async () => {
+    it('shows a clear error for each required field and sends nothing', async () => {
       const wrapper = mountForm()
 
       await submit(wrapper)
@@ -152,10 +186,10 @@ describe('ContactSection', () => {
         'Please select who you are.',
         'Please enter a message.',
       ])
-      expect(openEmail).not.toHaveBeenCalled()
+      expect(sendContactMessage).not.toHaveBeenCalled()
     })
 
-    it('shows an error for a badly formatted email and opens no email', async () => {
+    it('shows an error for a badly formatted email and sends nothing', async () => {
       const wrapper = mountForm()
       await fillInRequiredFields(wrapper)
       await wrapper.get('#contact-email').setValue('not-an-email')
@@ -165,40 +199,124 @@ describe('ContactSection', () => {
       expect(wrapper.get('#contact-email-error').text()).toBe(
         'Please enter a valid email address, for example name@example.com.',
       )
-      expect(openEmail).not.toHaveBeenCalled()
+      expect(sendContactMessage).not.toHaveBeenCalled()
+    })
+
+    it('shows a clear error and keeps what the visitor wrote when sending fails', async () => {
+      vi.mocked(sendContactMessage).mockResolvedValue(false)
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      await submit(wrapper)
+
+      expect(statusText(wrapper)).toBe(contact.failureMessage)
+      expect(valueOf(wrapper, '#contact-message')).toBe('Test message.')
+      expect(wrapper.get('form button').text()).toBe('Send message')
+    })
+
+    it('keeps the direct email link as a fallback when sending fails', async () => {
+      vi.mocked(sendContactMessage).mockResolvedValue(false)
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      await submit(wrapper)
+
+      expect(wrapper.get('form a').attributes('href')).toBe(`mailto:${testAddress}`)
+    })
+
+    it('can try again after a failure, and then succeed', async () => {
+      vi.mocked(sendContactMessage).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      await submit(wrapper)
+      await submit(wrapper)
+
+      expect(sendContactMessage).toHaveBeenCalledTimes(2)
+      expect(statusText(wrapper)).toBe(contact.successMessage)
     })
 
     it.each([
       ['missing', undefined],
       ['empty', ''],
       ['only spaces', '   '],
-    ])('shows the unavailable message when the address is %s', async (_case, address) => {
+    ])('hides the direct email line when the address is %s', (_case, address) => {
       vi.stubEnv('VITE_CONTACT_EMAIL', address as string)
       const wrapper = mountForm()
-      await fillInRequiredFields(wrapper)
 
-      await submit(wrapper)
-
-      expect(wrapper.get('[role="alert"]').text()).toBe(
-        'The contact form is not available right now.',
-      )
-      expect(openEmail).not.toHaveBeenCalled()
       expect(wrapper.find('form a').exists()).toBe(false)
       expect(wrapper.text()).not.toContain('Or write to us directly at')
-    })
-
-    it('asks for the fields first when the address is missing too', async () => {
-      vi.stubEnv('VITE_CONTACT_EMAIL', '')
-      const wrapper = mountForm()
-
-      await submit(wrapper)
-
-      expect(wrapper.text()).toContain('Please enter your name.')
-      expect(wrapper.text()).not.toContain(contact.unavailableMessage)
     })
   })
 
   describe('edge cases', () => {
+    it('shows "Sending…" and ignores extra presses while the message is on its way', async () => {
+      let answer!: (sent: boolean) => void
+      vi.mocked(sendContactMessage).mockReturnValue(
+        new Promise<boolean>((resolve) => {
+          answer = resolve
+        }),
+      )
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      await wrapper.get('form').trigger('submit')
+      const button = wrapper.get('form button')
+      expect(button.text()).toBe('Sending…')
+      expect(button.attributes('aria-disabled')).toBe('true')
+
+      await wrapper.get('form').trigger('submit')
+      expect(sendContactMessage).toHaveBeenCalledTimes(1)
+
+      answer(true)
+      await flushPromises()
+      expect(button.text()).toBe('Send message')
+      expect(button.attributes('aria-disabled')).toBeUndefined()
+    })
+
+    it('clears the previous result when the visitor sends again', async () => {
+      vi.mocked(sendContactMessage).mockResolvedValueOnce(false)
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+      await submit(wrapper)
+
+      await wrapper.get('#contact-name').setValue('')
+      await submit(wrapper)
+
+      expect(statusText(wrapper)).toBe('')
+    })
+
+    it('tells the server how long the form took to fill in', async () => {
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000)
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      now.mockReturnValue(9_500)
+      await submit(wrapper)
+
+      expect(vi.mocked(sendContactMessage).mock.calls[0]![1].elapsedMs).toBe(8_500)
+    })
+
+    it('hides the spam trap from people, keyboards, screen readers and autofill', () => {
+      const wrapper = mountForm()
+      const trap = wrapper.get('#contact-website')
+
+      expect(trap.element.closest('[aria-hidden="true"]')).not.toBeNull()
+      expect(trap.attributes('tabindex')).toBe('-1')
+      expect(trap.attributes('autocomplete')).toBe('off')
+      expect(trap.element.parentElement!.classList).toContain('absolute')
+    })
+
+    it('passes a filled-in spam trap to the server, which decides what to do', async () => {
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+      await wrapper.get('#contact-website').setValue('https://spam.example')
+
+      await submit(wrapper)
+
+      expect(vi.mocked(sendContactMessage).mock.calls[0]![1].website).toBe('https://spam.example')
+    })
+
     it('moves keyboard focus to the first field with a problem', async () => {
       const wrapper = mountForm()
       await wrapper.get('#contact-name').setValue('Test Visitor')
@@ -266,17 +384,18 @@ describe('ContactSection', () => {
       await submit(wrapper)
 
       expect(wrapper.get('#contact-message-error').text()).toBe('Please enter a message.')
-      expect(openEmail).not.toHaveBeenCalled()
+      expect(sendContactMessage).not.toHaveBeenCalled()
     })
 
-    it('keeps what the visitor wrote after opening the email', async () => {
+    it('rejects a message that is too long', async () => {
       const wrapper = mountForm()
       await fillInRequiredFields(wrapper)
+      await wrapper.get('#contact-message').setValue('a'.repeat(5001))
 
       await submit(wrapper)
 
-      const message = wrapper.get('#contact-message').element as HTMLTextAreaElement
-      expect(message.value).toBe('Test message.')
+      expect(wrapper.get('#contact-message-error').text()).toBe(contact.errors.messageTooLong)
+      expect(sendContactMessage).not.toHaveBeenCalled()
     })
 
     it('submits with a real button, so Enter and the keyboard work', () => {
@@ -303,6 +422,7 @@ describe('ContactSection', () => {
         expect(wrapper.get(`#${id}`).attributes('required')).toBeDefined()
       }
       expect(wrapper.get('#contact-product').attributes('required')).toBeUndefined()
+      expect(wrapper.get('#contact-website').attributes('required')).toBeUndefined()
     })
 
     it('helps phones: email keyboard, autofill, and text large enough not to zoom', () => {
@@ -312,7 +432,7 @@ describe('ContactSection', () => {
       expect(email.attributes('type')).toBe('email')
       expect(email.attributes('autocomplete')).toBe('email')
       expect(wrapper.get('#contact-name').attributes('autocomplete')).toBe('name')
-      for (const field of wrapper.findAll('input, select, textarea')) {
+      for (const field of wrapper.findAll(visibleFields)) {
         expect(field.classes()).toContain('text-base')
         expect(field.classes()).toContain('min-h-11')
       }

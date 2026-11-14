@@ -4,9 +4,8 @@ import { nextTick, reactive, ref, watch } from 'vue'
 import { contact } from '@/content/contact'
 import { products } from '@/content/products'
 import {
-  buildMailtoUrl,
-  openEmail,
   requiredFields,
+  sendContactMessage,
   validateContactForm,
   type ContactFormErrors,
   type ContactFormValues,
@@ -27,15 +26,20 @@ const fieldIds: Record<RequiredField, string> = {
   message: 'contact-message',
 }
 
-const values = reactive<ContactFormValues>({
-  name: '',
-  email: '',
-  visitorType: '',
-  product: '',
-  message: '',
-})
+function emptyValues(): ContactFormValues {
+  return { name: '', email: '', visitorType: '', product: '', message: '' }
+}
+
+const values = reactive<ContactFormValues>(emptyValues())
 const errors = ref<ContactFormErrors>({})
-const isUnavailable = ref(false)
+
+type SendStatus = 'idle' | 'sending' | 'sent' | 'failed'
+const status = ref<SendStatus>('idle')
+
+// Spam checks: a hidden field that only bots fill in, and how long the form
+// took to fill in. The server decides what to do with them.
+const spamTrap = ref('')
+let shownAt = Date.now()
 
 // Once an error is showing, keep it up to date as the visitor fixes the field.
 // Fields without an error stay quiet until the next time Send is pressed.
@@ -51,8 +55,11 @@ watch(values, () => {
 })
 
 async function handleSubmit() {
+  // The button stays focusable while sending, so ignore extra presses.
+  if (status.value === 'sending') return
+
   errors.value = validateContactForm(values)
-  isUnavailable.value = false
+  status.value = 'idle'
 
   const firstInvalid = requiredFields.find((field) => errors.value[field])
   if (firstInvalid) {
@@ -61,12 +68,21 @@ async function handleSubmit() {
     return
   }
 
-  if (!contactEmail) {
-    isUnavailable.value = true
-    return
-  }
+  status.value = 'sending'
+  const sent = await sendContactMessage(
+    { ...values },
+    { website: spamTrap.value, elapsedMs: Date.now() - shownAt },
+  )
 
-  openEmail(buildMailtoUrl(contactEmail, values))
+  if (sent) {
+    status.value = 'sent'
+    Object.assign(values, emptyValues())
+    spamTrap.value = ''
+    shownAt = Date.now()
+  } else {
+    // Keep what the visitor wrote so they can try again.
+    status.value = 'failed'
+  }
 }
 </script>
 
@@ -80,7 +96,7 @@ async function handleSubmit() {
         {{ contact.heading }}
       </h2>
 
-      <form class="mt-10 flex flex-col gap-5" novalidate @submit.prevent="handleSubmit">
+      <form class="relative mt-10 flex flex-col gap-5" novalidate @submit.prevent="handleSubmit">
         <div>
           <label :for="fieldIds.name" :class="labelClass">{{ contact.labels.name }}</label>
           <input
@@ -177,16 +193,35 @@ async function handleSubmit() {
           </p>
         </div>
 
+        <!-- Spam trap: hidden from people and screen readers, filled in by many bots. -->
+        <div aria-hidden="true" class="absolute -left-[10000px] h-px w-px overflow-hidden">
+          <label for="contact-website">{{ contact.spamTrapLabel }}</label>
+          <input
+            id="contact-website"
+            v-model="spamTrap"
+            type="text"
+            name="website"
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </div>
+
         <div>
           <button
             type="submit"
-            class="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-md bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 sm:w-auto"
+            :aria-disabled="status === 'sending' ? 'true' : undefined"
+            class="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-md bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-disabled:cursor-wait aria-disabled:opacity-75 sm:w-auto"
           >
-            {{ contact.submitLabel }}
+            {{ status === 'sending' ? contact.sendingLabel : contact.submitLabel }}
           </button>
-          <p v-if="isUnavailable" role="alert" :class="errorClass">
-            {{ contact.unavailableMessage }}
-          </p>
+          <div role="status">
+            <p v-if="status === 'sent'" class="mt-3 font-medium text-emerald-800">
+              {{ contact.successMessage }}
+            </p>
+            <p v-else-if="status === 'failed'" class="mt-3 font-medium text-red-700">
+              {{ contact.failureMessage }}
+            </p>
+          </div>
           <p v-if="contactEmail" class="mt-4 text-stone-700">
             {{ contact.directContactPrefix }}
             <a
