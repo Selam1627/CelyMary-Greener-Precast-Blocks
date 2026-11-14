@@ -2,9 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { contact } from '@/content/contact'
 import {
-  buildMailtoUrl,
+  buildEmailSubject,
+  buildEmailText,
+  contactEndpoint,
   isValidEmail,
-  openEmail,
+  maxLengths,
+  sendContactMessage,
   validateContactForm,
   type ContactFormValues,
 } from '@/utils/contactForm'
@@ -17,17 +20,7 @@ const validValues: ContactFormValues = {
   message: 'Test message.',
 }
 
-/** Reads the subject and body back out of an email link. */
-function parseMailto(url: string) {
-  const parsed = new URL(url)
-  return {
-    protocol: parsed.protocol,
-    to: parsed.pathname,
-    params: [...parsed.searchParams.keys()],
-    subject: parsed.searchParams.get('subject'),
-    body: parsed.searchParams.get('body'),
-  }
-}
+const spamCheck = { website: '', elapsedMs: 10_000 }
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -82,6 +75,47 @@ describe('validateContactForm', () => {
 
       expect(errors).toEqual({ email: contact.errors.emailInvalid })
     })
+
+    it('rejects a name, email or message that is too long', () => {
+      const errors = validateContactForm({
+        ...validValues,
+        name: 'a'.repeat(maxLengths.name + 1),
+        email: `${'a'.repeat(maxLengths.email)}@example.com`,
+        message: 'a'.repeat(maxLengths.message + 1),
+      })
+
+      expect(errors).toEqual({
+        name: contact.errors.nameTooLong,
+        email: contact.errors.emailInvalid,
+        message: contact.errors.messageTooLong,
+      })
+    })
+  })
+
+  describe('edge cases', () => {
+    it('accepts a name and message exactly at the limit', () => {
+      const errors = validateContactForm({
+        ...validValues,
+        name: 'a'.repeat(maxLengths.name),
+        message: 'a'.repeat(maxLengths.message),
+      })
+
+      expect(errors).toEqual({})
+    })
+
+    it('ignores spaces around the text when counting its length', () => {
+      const errors = validateContactForm({
+        ...validValues,
+        message: `  ${'a'.repeat(maxLengths.message)}  `,
+      })
+
+      expect(errors).toEqual({})
+    })
+
+    it('states the same limits in the error messages as it checks', () => {
+      expect(contact.errors.nameTooLong).toContain(maxLengths.name.toLocaleString('en-US'))
+      expect(contact.errors.messageTooLong).toContain(maxLengths.message.toLocaleString('en-US'))
+    })
   })
 })
 
@@ -110,20 +144,23 @@ describe('isValidEmail', () => {
   })
 })
 
-describe('buildMailtoUrl', () => {
+describe('buildEmailSubject', () => {
+  it('names the visitor', () => {
+    expect(buildEmailSubject(validValues)).toBe('Website enquiry from Test Visitor')
+  })
+
+  it('keeps the subject on one line, whatever the name contains', () => {
+    const subject = buildEmailSubject({ ...validValues, name: '  Test\r\nBcc: other@example.com ' })
+
+    expect(subject).toBe('Website enquiry from Test Bcc: other@example.com')
+    expect(subject).not.toMatch(/[\r\n]/)
+  })
+})
+
+describe('buildEmailText', () => {
   describe('normal cases', () => {
-    it('sends the email to the given address with a subject naming the visitor', () => {
-      const email = parseMailto(buildMailtoUrl('contact@example.com', validValues))
-
-      expect(email.protocol).toBe('mailto:')
-      expect(email.to).toBe('contact@example.com')
-      expect(email.subject).toBe('Website enquiry from Test Visitor')
-    })
-
-    it('fills the body with the details, then the message', () => {
-      const email = parseMailto(buildMailtoUrl('contact@example.com', validValues))
-
-      expect(email.body).toBe(
+    it('lists the details, then the message', () => {
+      expect(buildEmailText(validValues)).toBe(
         [
           'Name: Test Visitor',
           'Email: visitor@example.com',
@@ -131,74 +168,72 @@ describe('buildMailtoUrl', () => {
           'Product of interest: Paving blocks',
           '',
           'Test message.',
-        ].join('\r\n'),
+        ].join('\n'),
       )
     })
   })
 
   describe('edge cases', () => {
     it('leaves out the product line when no product is chosen', () => {
-      const email = parseMailto(
-        buildMailtoUrl('contact@example.com', { ...validValues, product: '' }),
-      )
-
-      expect(email.body).not.toContain('Product of interest')
+      expect(buildEmailText({ ...validValues, product: '' })).not.toContain('Product of interest')
     })
 
     it('removes spaces around what the visitor typed', () => {
-      const email = parseMailto(
-        buildMailtoUrl('contact@example.com', {
-          ...validValues,
-          name: '  Test Visitor  ',
-          email: '  visitor@example.com  ',
-          message: '  Test message.  ',
-        }),
-      )
+      const text = buildEmailText({
+        ...validValues,
+        name: '  Test Visitor  ',
+        email: '  visitor@example.com  ',
+        message: '  Test message.  ',
+      })
 
-      expect(email.subject).toBe('Website enquiry from Test Visitor')
-      expect(email.body).toContain('Email: visitor@example.com\r\n')
-      expect(email.body!.endsWith('\r\n\r\nTest message.')).toBe(true)
+      expect(text).toContain('Name: Test Visitor\n')
+      expect(text).toContain('Email: visitor@example.com\n')
+      expect(text.endsWith('\n\nTest message.')).toBe(true)
     })
 
-    it('keeps the line breaks in a message', () => {
-      const email = parseMailto(
-        buildMailtoUrl('contact@example.com', { ...validValues, message: 'Line one\nLine two' }),
-      )
+    it('keeps the line breaks in a message, whatever kind they are', () => {
+      const text = buildEmailText({ ...validValues, message: 'One\r\nTwo\rThree\nFour' })
 
-      expect(email.body).toContain('Line one\r\nLine two')
+      expect(text.endsWith('One\nTwo\nThree\nFour')).toBe(true)
     })
 
     it('keeps accents and symbols intact', () => {
-      const message = 'Hola, ¿cómo están? 100% + más & "otros" #1'
-      const email = parseMailto(buildMailtoUrl('contact@example.com', { ...validValues, message }))
+      const message = 'Hola, ¿cómo están? 100% + más & "otros" #1 <b>'
 
-      expect(email.body).toContain(message)
-    })
-  })
-
-  describe('expected errors', () => {
-    it('cannot be tricked into adding recipients or other email headers', () => {
-      const email = parseMailto(
-        buildMailtoUrl('contact@example.com', {
-          ...validValues,
-          name: 'Test&bcc=other@example.com',
-          message: 'Test?cc=other@example.com&subject=Changed',
-        }),
-      )
-
-      expect(email.params).toEqual(['subject', 'body'])
-      expect(email.subject).toBe('Website enquiry from Test&bcc=other@example.com')
+      expect(buildEmailText({ ...validValues, message })).toContain(message)
     })
   })
 })
 
-describe('openEmail', () => {
-  it('sends the browser to the email link', () => {
-    const location = { href: '' }
-    vi.stubGlobal('location', location)
+describe('sendContactMessage', () => {
+  describe('normal cases', () => {
+    it('posts the form and the spam check as JSON to the contact endpoint', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
 
-    openEmail('mailto:contact@example.com')
+      const sent = await sendContactMessage(validValues, spamCheck)
 
-    expect(location.href).toBe('mailto:contact@example.com')
+      expect(sent).toBe(true)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const [url, init] = fetchMock.mock.calls[0]!
+      expect(url).toBe(contactEndpoint)
+      expect(init.method).toBe('POST')
+      expect(init.headers).toEqual({ 'Content-Type': 'application/json' })
+      expect(JSON.parse(init.body)).toEqual({ ...validValues, ...spamCheck })
+    })
+  })
+
+  describe('expected errors', () => {
+    it.each([400, 500, 502])('reports failure when the server answers %i', async (status) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"ok":false}', { status })))
+
+      expect(await sendContactMessage(validValues, spamCheck)).toBe(false)
+    })
+
+    it('reports failure when the server cannot be reached', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+
+      expect(await sendContactMessage(validValues, spamCheck)).toBe(false)
+    })
   })
 })
