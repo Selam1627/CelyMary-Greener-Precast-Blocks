@@ -20,9 +20,10 @@ const env: ContactEnv = {
 const validBody = {
   name: 'Test Visitor',
   email: 'visitor@example.com',
-  visitorType: 'Architect',
-  product: 'Paving blocks',
+  visitorType: 'architect',
+  product: 'paving-blocks',
   message: 'Test message.',
+  language: 'en',
   website: '',
   elapsedMs: 10_000,
 }
@@ -93,10 +94,30 @@ describe('handleContactRequest', () => {
           'Email: visitor@example.com',
           'Visitor type: Architect',
           'Product of interest: Paving blocks',
+          'Language: English',
           '',
           'Test message.',
         ].join('\n'),
       )
+    })
+
+    it.each([
+      ['es', 'Spanish (Español)'],
+      ['ti', 'Tigrinya (ትግርኛ)'],
+      ['am', 'Amharic (አማርኛ)'],
+    ])('sends an English email for a visitor reading in %s', async (language, name) => {
+      const response = await handleContactRequest(
+        post({ ...validBody, language, name: 'ሰላም', message: 'ሰላም። ከመይ ኣለኹም?' }),
+        env,
+      )
+
+      expect(response.status).toBe(200)
+      const { body } = sentEmail()
+      expect(body.subject).toBe('Website enquiry from ሰላም')
+      expect(body.text).toContain('Visitor type: Architect\n')
+      expect(body.text).toContain('Product of interest: Paving blocks\n')
+      expect(body.text).toContain(`Language: ${name}\n`)
+      expect(body.text.endsWith('\n\nሰላም። ከመይ ኣለኹም?')).toBe(true)
     })
 
     it('accepts a message with no product', async () => {
@@ -184,8 +205,12 @@ describe('handleContactRequest', () => {
       ['a missing message', { message: undefined }],
       ['a message that is too long', { message: 'a'.repeat(5001) }],
       ['a field of the wrong type', { name: 42 }],
-      ['a visitor type the form does not offer', { visitorType: 'Robot' }],
-      ['a product the form does not offer', { product: 'Mystery block' }],
+      ['a visitor type the form does not offer', { visitorType: 'robot' }],
+      ['a product the form does not offer', { product: 'mystery-block' }],
+      ['a visitor type label instead of its id', { visitorType: 'Architect' }],
+      ['a product name instead of its id', { product: 'Paving blocks' }],
+      ['a language the site does not offer', { language: 'fr' }],
+      ['a missing language', { language: undefined }],
     ])('refuses %s, like the form does', async (_case, change) => {
       const response = await handleContactRequest(post({ ...validBody, ...change }), env)
 

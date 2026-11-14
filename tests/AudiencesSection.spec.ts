@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import AudiencesSection from '@/components/sections/AudiencesSection.vue'
-import { audiences, type AudiencesContent } from '@/content/audiences'
+import { en } from '@/content/locales/en'
+import type { AudiencesContent } from '@/content/types'
 
-/** Mounts AudiencesSection with a replacement for src/content/audiences.ts. */
+const { audiences } = en
+
+/** Mounts AudiencesSection with replacement English texts for this section. */
 async function mountWithContent(content: AudiencesContent) {
   vi.resetModules()
-  vi.doMock('@/content/audiences', () => ({ audiences: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, audiences: content } }))
   const { default: Component } = await import('@/components/sections/AudiencesSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/audiences')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 

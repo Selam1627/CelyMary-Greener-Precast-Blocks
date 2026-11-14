@@ -1,13 +1,15 @@
 // This file is shared by the website and the Vercel function in api/. Vercel
 // runs functions as native ES modules and doesn't support the "@/" alias, so
 // imports here are relative and end in ".js".
-import { contact } from '../content/contact.js'
+import type { LanguageCode } from '../content/languages.js'
+import type { ContactErrorTexts } from '../content/types.js'
 
 export interface ContactFormValues {
   name: string
   email: string
+  /** A visitor type id, such as "architect": the same in every language. */
   visitorType: string
-  /** Optional: an empty string means no specific product. */
+  /** A product id, or an empty string for no specific product. */
   product: string
   message: string
 }
@@ -20,14 +22,21 @@ export interface SpamCheck {
   elapsedMs: number
 }
 
-export type ContactRequestBody = ContactFormValues & SpamCheck
+export type ContactRequestBody = ContactFormValues &
+  SpamCheck & {
+    /** The language the visitor was reading the site in. */
+    language: LanguageCode
+  }
 
 /** The required fields, in the order they appear on the form. */
 export const requiredFields = ['name', 'email', 'visitorType', 'message'] as const
 
 export type RequiredField = (typeof requiredFields)[number]
 
-export type ContactFormErrors = Partial<Record<RequiredField, string>>
+/** Names a text in the contact form's errors, in whichever language is shown. */
+export type ContactErrorKey = keyof ContactErrorTexts
+
+export type ContactFormErrors = Partial<Record<RequiredField, ContactErrorKey>>
 
 /** Longest accepted value of each typed field, in characters. */
 export const maxLengths = {
@@ -44,7 +53,10 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
-/** Returns an error message for each field with a problem; empty when all are valid. */
+/**
+ * Returns the error of each field with a problem; empty when all are valid.
+ * Errors are keys, so the form can show them in the visitor's language.
+ */
 export function validateContactForm(values: ContactFormValues): ContactFormErrors {
   const errors: ContactFormErrors = {}
   const name = values.name.trim()
@@ -52,50 +64,28 @@ export function validateContactForm(values: ContactFormValues): ContactFormError
   const message = values.message.trim()
 
   if (!name) {
-    errors.name = contact.errors.nameRequired
+    errors.name = 'nameRequired'
   } else if (name.length > maxLengths.name) {
-    errors.name = contact.errors.nameTooLong
+    errors.name = 'nameTooLong'
   }
 
   if (!email) {
-    errors.email = contact.errors.emailRequired
+    errors.email = 'emailRequired'
   } else if (email.length > maxLengths.email || !isValidEmail(email)) {
-    errors.email = contact.errors.emailInvalid
+    errors.email = 'emailInvalid'
   }
 
   if (!values.visitorType) {
-    errors.visitorType = contact.errors.visitorTypeRequired
+    errors.visitorType = 'visitorTypeRequired'
   }
 
   if (!message) {
-    errors.message = contact.errors.messageRequired
+    errors.message = 'messageRequired'
   } else if (message.length > maxLengths.message) {
-    errors.message = contact.errors.messageTooLong
+    errors.message = 'messageTooLong'
   }
 
   return errors
-}
-
-/** The email subject. Line breaks in the name are flattened, so it stays on one line. */
-export function buildEmailSubject(values: ContactFormValues): string {
-  const name = values.name.trim().replace(/\s+/g, ' ')
-  return `${contact.email.subjectPrefix} ${name}`
-}
-
-/** The plain-text email the company receives: the details, a blank line, then the message. */
-export function buildEmailText(values: ContactFormValues): string {
-  const { email } = contact
-
-  const details = [
-    `${email.nameLabel}: ${values.name.trim().replace(/\s+/g, ' ')}`,
-    `${email.emailLabel}: ${values.email.trim()}`,
-    `${email.visitorTypeLabel}: ${values.visitorType}`,
-  ]
-  if (values.product) {
-    details.push(`${email.productLabel}: ${values.product}`)
-  }
-
-  return `${details.join('\n')}\n\n${values.message.trim().replace(/\r\n?/g, '\n')}`
 }
 
 /**
@@ -105,8 +95,9 @@ export function buildEmailText(values: ContactFormValues): string {
 export async function sendContactMessage(
   values: ContactFormValues,
   spamCheck: SpamCheck,
+  language: LanguageCode,
 ): Promise<boolean> {
-  const body: ContactRequestBody = { ...values, ...spamCheck }
+  const body: ContactRequestBody = { ...values, ...spamCheck, language }
 
   try {
     const response = await fetch(contactEndpoint, {

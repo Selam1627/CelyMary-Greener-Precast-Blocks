@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { roadmap } from '@/content/roadmap'
+import { computed } from 'vue'
+
+import { useLanguage } from '@/composables/useLanguage'
+
+const { content } = useLanguage()
+const roadmap = computed(() => content.value.roadmap)
 </script>
 
 <template>

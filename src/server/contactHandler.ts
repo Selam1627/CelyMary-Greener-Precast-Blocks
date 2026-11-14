@@ -4,14 +4,9 @@
 //
 // Imports are relative and end in ".js" because Vercel runs this as a native
 // ES module and doesn't support the "@/" alias.
-import { contact } from '../content/contact.js'
-import { products } from '../content/products.js'
-import {
-  buildEmailSubject,
-  buildEmailText,
-  validateContactForm,
-  type ContactFormValues,
-} from '../utils/contactForm.js'
+import { isLanguageCode } from '../content/languages.js'
+import { validateContactForm, type ContactFormValues } from '../utils/contactForm.js'
+import { buildEmailSubject, buildEmailText, hasKnownChoices } from './contactEmail.js'
 
 /** The environment variables the handler reads. */
 export interface ContactEnv {
@@ -53,14 +48,7 @@ function readBody(body: Record<string, unknown>) {
     message: text(body.message),
   }
   const elapsedMs = typeof body.elapsedMs === 'number' ? body.elapsedMs : Number.NaN
-  return { values, website: text(body.website), elapsedMs }
-}
-
-/** True when the visitor type and product are ones the form offers. */
-function hasKnownChoices(values: ContactFormValues): boolean {
-  const knownProduct =
-    values.product === '' || products.items.some((product) => product.name === values.product)
-  return contact.visitorTypes.includes(values.visitorType) && knownProduct
+  return { values, language: body.language, website: text(body.website), elapsedMs }
 }
 
 /**
@@ -92,14 +80,18 @@ export async function handleContactRequest(request: Request, env: ContactEnv): P
     return json(400, { ok: false })
   }
 
-  const { values, website, elapsedMs } = readBody(parsed as Record<string, unknown>)
+  const { values, language, website, elapsedMs } = readBody(parsed as Record<string, unknown>)
 
   // Spam: answer as if it worked, so bots get no hint, but send nothing.
   if (website.trim() !== '' || !(elapsedMs >= minFillTimeMs)) {
     return json(200, { ok: true })
   }
 
-  if (Object.keys(validateContactForm(values)).length > 0 || !hasKnownChoices(values)) {
+  if (
+    Object.keys(validateContactForm(values)).length > 0 ||
+    !hasKnownChoices(values) ||
+    !isLanguageCode(language)
+  ) {
     return json(400, { ok: false })
   }
 
@@ -129,7 +121,7 @@ export async function handleContactRequest(request: Request, env: ContactEnv): P
         // Replies go to the visitor. Their address is never used as the sender.
         reply_to: values.email.trim(),
         subject: buildEmailSubject(values),
-        text: buildEmailText(values),
+        text: buildEmailText({ ...values, language }),
       }),
     })
 

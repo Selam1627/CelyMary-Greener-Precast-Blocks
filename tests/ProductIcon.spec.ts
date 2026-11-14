@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import ProductIcon from '@/components/ui/ProductIcon.vue'
-import type { ProductIconName } from '@/content/products'
+import type { ProductIconName } from '@/content/types'
 
 const iconNames: ProductIconName[] = [
   'building-block',

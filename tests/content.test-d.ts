@@ -5,14 +5,25 @@
  */
 import { describe, expectTypeOf, it } from 'vitest'
 
-import type { Audience } from '@/content/audiences'
-import { contact } from '@/content/contact'
-import { hero, type HeroAction, type HeroContent } from '@/content/hero'
+import type { LanguageCode } from '@/content/languages'
+import { en } from '@/content/locales/en'
+import type {
+  Audience,
+  Benefit,
+  ContactErrorTexts,
+  HeroAction,
+  HeroContent,
+  Product,
+  RoadmapContent,
+  RoadmapStep,
+  SiteContent,
+  SolutionContent,
+  TeamMember,
+  VisitorType,
+} from '@/content/types'
 import type { ContactFormErrors, ContactFormValues } from '@/utils/contactForm'
-import { products, type Product } from '@/content/products'
-import type { RoadmapContent, RoadmapStep } from '@/content/roadmap'
-import { team, type TeamMember } from '@/content/team'
-import { solution, type Benefit, type SolutionContent } from '@/content/solution'
+
+const { contact, hero, products, solution, team } = en
 
 describe('content types: expected errors', () => {
   it('rejects a button link that is not an in-page anchor', () => {
@@ -56,7 +67,7 @@ describe('content types: expected errors', () => {
 
   it('rejects a product with an icon that does not exist', () => {
     const product: Product = {
-      id: 'test',
+      id: 'paving-blocks',
       name: 'Test block',
       description: 'Test use.',
       // @ts-expect-error: icon must be one of the drawn icons
@@ -68,7 +79,7 @@ describe('content types: expected errors', () => {
 
   it('rejects a product without a description', () => {
     // @ts-expect-error: description is required
-    const product: Product = { id: 'test', name: 'Test block', icon: 'paving' }
+    const product: Product = { id: 'paving-blocks', name: 'Test block', icon: 'paving' }
 
     expectTypeOf(product).toEqualTypeOf<Product>()
   })
@@ -112,16 +123,64 @@ describe('content types: expected errors', () => {
 
   it('rejects an error for a field that is not required', () => {
     // @ts-expect-error: product is optional, so it never has an error
-    const errors: ContactFormErrors = { product: 'Test error.' }
+    const errors: ContactFormErrors = { product: 'nameRequired' }
 
     expectTypeOf(errors).toEqualTypeOf<ContactFormErrors>()
   })
 
+  it('rejects an error that is not one of the translated error texts', () => {
+    // @ts-expect-error: errors are keys of the error texts, not free text
+    const errors: ContactFormErrors = { name: 'Please enter your name.' }
+
+    expectTypeOf(errors).toEqualTypeOf<ContactFormErrors>()
+  })
+
+  it('rejects a language with a section missing', () => {
+    const withoutContact: Omit<SiteContent, 'contact'> = en
+
+    // @ts-expect-error: every language must have every section
+    const content: SiteContent = withoutContact
+
+    expectTypeOf(content).toEqualTypeOf<SiteContent>()
+  })
+
+  it('rejects a language with an error text missing', () => {
+    const errors: Omit<ContactErrorTexts, 'messageTooLong'> = en.contact.errors
+
+    // @ts-expect-error: every language must have every error text
+    const content: SiteContent = { ...en, contact: { ...en.contact, errors } }
+
+    expectTypeOf(content).toEqualTypeOf<SiteContent>()
+  })
+
+  it('rejects a visitor type or product id the form does not offer', () => {
+    // @ts-expect-error: visitor type ids are fixed
+    const type: VisitorType = { id: 'robot', label: 'Robot' }
+
+    const product: Product = {
+      // @ts-expect-error: product ids are fixed
+      id: 'mystery-block',
+      name: 'Test block',
+      description: 'Test use.',
+      icon: 'paving',
+    }
+
+    expectTypeOf(type).toEqualTypeOf<VisitorType>()
+    expectTypeOf(product).toEqualTypeOf<Product>()
+  })
+
+  it('rejects a language the site does not offer', () => {
+    // @ts-expect-error: only en, es, ti and am
+    const code: LanguageCode = 'fr'
+
+    expectTypeOf(code).toEqualTypeOf<LanguageCode>()
+  })
+
   it('does not allow adding visitor types from code at runtime', () => {
     // @ts-expect-error: visitorTypes is read-only
-    contact.visitorTypes.push('Test')
+    contact.visitorTypes.push({ id: 'other', label: 'Test' })
 
-    expectTypeOf(contact.visitorTypes).toEqualTypeOf<readonly string[]>()
+    expectTypeOf(contact.visitorTypes).toEqualTypeOf<readonly VisitorType[]>()
   })
 
   it('does not allow adding team members from code at runtime', () => {
@@ -133,7 +192,7 @@ describe('content types: expected errors', () => {
 
   it('does not allow adding products from code at runtime', () => {
     // @ts-expect-error: items is read-only
-    products.items.push({ id: 'x', name: 'X', description: 'X.', icon: 'paving' })
+    products.items.push({ id: 'paving-blocks', name: 'X', description: 'X.', icon: 'paving' })
 
     expectTypeOf(products.items).toEqualTypeOf<readonly Product[]>()
   })

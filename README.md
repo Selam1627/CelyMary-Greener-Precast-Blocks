@@ -28,6 +28,7 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 | Story | What it covers                                                                       |
 | ----- | ------------------------------------------------------------------------------------ |
 | US-09 | Form backend: the contact form sends the message from the website, with no email app |
+| US-05 | Languages: English, Spanish, Tigrinya (ትግርኛ) and Amharic (አማርኛ)                      |
 
 ### What the live site has
 
@@ -38,12 +39,12 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 - **Roadmap:** the current concept stage and the next steps, without invented dates.
 - **Team:** the founder and co-founder.
 - **Contact:** a validated form that sends the message from the website, with clear success and error messages and basic spam protection, plus a direct email link.
+- **Languages:** a language switcher at the top of the page offers English, Español, ትግርኛ and አማርኛ. The site remembers the visitor's choice.
 
 ### Backlog
 
 | Story | What it covers                                    |
 | ----- | ------------------------------------------------- |
-| US-05 | Spanish version                                   |
 | US-06 | News and milestones                               |
 | US-07 | Carbon savings calculator, only with real figures |
 | US-08 | Separate pages                                    |
@@ -84,6 +85,16 @@ The form posts to `/api/contact`, a Vercel function ([api/contact.ts](api/contac
 - **Spam protection:** a hidden field that people never see but many bots fill in, and a minimum time to fill in the form. Messages caught by either are dropped without telling the sender. The server also re-checks every field and limits the request size.
 - **Local testing:** `npm run dev` answers `/api/contact` with the same code, reading the variables from `.env`, so you don't need the Vercel CLI. With a real `RESEND_API_KEY` in `.env`, the form sends real emails. `npm run preview` serves only the static site, so the form can't send from there.
 - **Errors:** the server logs why a message couldn't be sent (a missing variable, or Resend's reason), never the API key. On Vercel, these appear in the project's function logs.
+
+### Languages
+
+The site is available in English (the default), Spanish, Tigrinya and Amharic.
+
+- **Where the texts are:** one file per language in [src/content/locales/](src/content/locales/): `en.ts`, `es.ts`, `ti.ts` and `am.ts`. English is the reference. A change to any text goes into all four files, and a test fails if a language is missing a text.
+- **Drafts:** the Spanish, Tigrinya and Amharic texts are drafts until they have been reviewed. Each draft has a note at the top of its file and `draft: true` in [src/content/languages.ts](src/content/languages.ts).
+- **The visitor's choice:** it is saved in the browser (`localStorage`), and the page's `lang` attribute changes with it. If the browser blocks storage, the site still switches language for that visit.
+- **Ethiopic script:** Tigrinya and Amharic use Noto Sans Ethiopic, from the `@fontsource-variable/noto-sans-ethiopic` package. The font is served with the site, so no third-party font service is involved.
+- **Contact form:** the form sends the visitor type and product as ids, plus the visitor's language. The email you receive is always in English and has a `Language:` line, for example `Language: Spanish (Español)`. The visitor's message arrives exactly as they wrote it.
 
 ### Start with Docker
 
@@ -163,7 +174,9 @@ docker compose run --rm app npm run test
 │   ├── components/
 │   │   ├── sections/          # One component per page section
 │   │   └── ui/                # Small reusable pieces (buttons, cards…)
-│   ├── content/               # Site text and data (products, roadmap, team)
+│   ├── composables/           # Shared state (the current language)
+│   ├── content/               # Site text and data, by language
+│   │   └── locales/           # One file per language: en, es, ti, am
 │   ├── server/                # Server-only code (contact form handler)
 │   ├── utils/                 # Plain TypeScript helpers (contact form rules)
 │   ├── App.vue                # Page layout: puts the sections in order
