@@ -66,7 +66,13 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 - Reusable small pieces go in `src/components/ui/`.
 - Server code goes in `src/server/` and must never be imported by website code. Files in `api/` stay thin entry points that call it.
 - Vercel runs `api/` as native ES modules without the `@/` alias. So `src/server/` and any website code it imports (such as `src/utils/contactForm.ts` and `src/content/`) use relative imports ending in `.js`. `tsconfig.api.json` checks this.
-- Keep site text and data (products, roadmap, team) in typed files in `src/content/`, not hard-coded in templates. This makes the Spanish version (US-05) easier later.
+- Keep site text and data (products, roadmap, team) in `src/content/`, not hard-coded in templates. There is one file per language in `src/content/locales/` (`en.ts`, `es.ts`, `ti.ts`, `am.ts`), each a complete `SiteContent` (types in `src/content/types.ts`). Components get the current language's texts from `useLanguage()` in `src/composables/`.
+- Languages (US-05):
+  - English is the default and the reference.
+  - Every new or changed text goes into all four language files, with the same meaning, the same ids, anchors and icons, and the same confidentiality and honesty rules. `tests/locales.spec.ts` checks that every language has every text.
+  - A translation that hasn't been reviewed by a speaker is a draft: add a `DRAFT – awaiting review` note at the top of the file and set `draft: true` in `src/content/languages.ts`. Only the user decides when a draft is reviewed.
+  - The brand name and people's names are not translated.
+  - The contact form sends ids (visitor type, product) and the language code, never translated labels. The email the company receives is always in English (`src/content/emailTemplate.ts`, `src/server/contactEmail.ts`) and names the visitor's language.
 - Style with Tailwind utility classes. Don't add UI libraries or other dependencies without asking.
 - Mobile-first, responsive layout. Use semantic HTML and accessible markup: labelled form fields, alt text, keyboard navigation and enough color contrast.
 - Tests: Vitest + Vue Test Utils, in `tests/`, named `<Component>.spec.ts`. Import app code through the `@/` alias (for example `@/App.vue`).
@@ -88,10 +94,10 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 ### Built after the MVP
 
 - **US-09 — Form backend:** the contact form sends the message from the website itself through `/api/contact`, with no email app, to the address in `VITE_CONTACT_EMAIL`. It keeps the fields and validation, and shows a clear success or error message. The "Or write to us directly at…" link stays as a fallback. Spam protection: a hidden trap field, a minimum fill time, and server-side checks.
+- **US-05 — Languages:** the site in English, Spanish, Tigrinya (ትግርኛ) and Amharic (አማርኛ), so partners in Spain and Ethiopia can read it. A language switcher on every screen size shows each language in its own name and script. Every text is available in all four languages, including the contact form's labels, validation, success and error messages. English stays the default. The visitor's choice is remembered, and the page's `lang` attribute follows it. Ethiopic script uses Noto Sans Ethiopic, served with the site. The form works in every language, and the email the company receives stays in English.
 
 ### Backlog
 
-- **US-05 — Spanish version.**
 - **US-06 — News and milestones.**
 - **US-07 — Carbon savings calculator.** Do not build it without real, user-provided figures (see Honesty).
 - **US-08 — Separate pages.**
