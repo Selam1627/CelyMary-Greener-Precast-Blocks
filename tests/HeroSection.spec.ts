@@ -34,7 +34,7 @@ describe('HeroSection', () => {
       expect(wrapper.text()).toContain(hero.tagline)
     })
 
-    it('has "Work with us" and "Contact" buttons that link to their sections', () => {
+    it('has "Work with us" and "Contact" buttons that open their pages', () => {
       const wrapper = mount(HeroSection)
 
       const buttons = wrapper.findAll('a').map((link) => ({
@@ -43,8 +43,8 @@ describe('HeroSection', () => {
       }))
 
       expect(buttons).toEqual([
-        { label: 'Work with us', href: '#work-with-us' },
-        { label: 'Contact', href: '#contact' },
+        { label: 'Work with us', href: '/about' },
+        { label: 'Contact', href: '/contact' },
       ])
     })
   })
@@ -84,13 +84,14 @@ describe('HeroSection', () => {
     it('renders the text from the content file, not hard-coded text', async () => {
       const wrapper = await mountWithContent({
         companyName: 'Test Company',
+        companyShortName: 'Test',
         tagline: 'Test tagline.',
-        actions: [{ label: 'Test action', href: '#test' }],
+        actions: [{ label: 'Test action', href: '/products' }],
       })
 
       expect(wrapper.get('h1').text()).toBe('Test Company')
       expect(wrapper.text()).toContain('Test tagline.')
-      expect(wrapper.get('a').attributes('href')).toBe('#test')
+      expect(wrapper.get('a').attributes('href')).toBe('/products')
     })
 
     it("shows no Ge'ez line in English", () => {
@@ -120,7 +121,7 @@ describe('HeroSection', () => {
     it('styles every action after the first as secondary', async () => {
       const wrapper = await mountWithContent({
         ...hero,
-        actions: [...hero.actions, { label: 'Third', href: '#third' }],
+        actions: [...hero.actions, { label: 'Third', href: '/products' }],
       })
       const third = wrapper.findAll('a')[2]!
 

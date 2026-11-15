@@ -89,17 +89,26 @@ async function handleSubmit() {
     status.value = 'failed'
   }
 }
+
+withDefaults(
+  defineProps<{
+    /** "h1" when this section opens its page; otherwise a section heading. */
+    headingLevel?: 'h1' | 'h2'
+  }>(),
+  { headingLevel: 'h2' },
+)
 </script>
 
 <template>
   <section id="contact" aria-labelledby="contact-heading" class="bg-stone-50 px-4 py-16 sm:py-24">
     <div class="mx-auto max-w-xl">
-      <h2
+      <component
+        :is="headingLevel"
         id="contact-heading"
         class="text-center text-3xl font-bold tracking-tight text-emerald-900 sm:text-4xl"
       >
         {{ contact.heading }}
-      </h2>
+      </component>
 
       <form class="relative mt-10 flex flex-col gap-5" novalidate @submit.prevent="handleSubmit">
         <div>

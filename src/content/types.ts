@@ -1,6 +1,24 @@
 // The shape of the site's texts. Every language file in src/content/locales/
 // must provide a complete SiteContent, so TypeScript refuses a language with a
 // missing text.
+import type { MenuPageId, PagePath } from '../pages.js'
+
+export interface NavigationContent {
+  /** First link on every page, shown on keyboard focus: jumps past the menu. */
+  skipLink: string
+  /** Screen-reader label of the main menu. */
+  menuLabel: string
+  /** Text of the button that opens the menu on phones. */
+  menuButton: string
+  /** Each page's name in the menu, also used in the browser tab title. */
+  pages: Record<MenuPageId, string>
+}
+
+export interface NotFoundContent {
+  heading: string
+  message: string
+  homeLink: string
+}
 
 export interface LanguageSwitcherContent {
   /** Screen-reader label of the language buttons. */
@@ -9,13 +27,15 @@ export interface LanguageSwitcherContent {
 
 export interface HeroAction {
   label: string
-  /** In-page anchor of the section the button scrolls to. */
-  href: `#${string}`
+  /** Address of the page the button opens. */
+  href: PagePath
 }
 
 export interface HeroContent {
   /** The brand name, in Latin letters on every page. Not translated. */
   companyName: string
+  /** Shown instead of the full name in the header on phones, where space is short. */
+  companyShortName: string
   /**
    * The brand name in Ge'ez script, shown under the Latin name. Only for
    * languages written in Ge'ez (Tigrinya and Amharic).
@@ -153,6 +173,8 @@ export interface ContactContent {
 
 /** Every text on the site, in one language. */
 export interface SiteContent {
+  navigation: NavigationContent
+  notFound: NotFoundContent
   languageSwitcher: LanguageSwitcherContent
   hero: HeroContent
   solution: SolutionContent

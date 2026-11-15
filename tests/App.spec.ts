@@ -1,53 +1,61 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import App from '@/App.vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+afterEach(() => {
+  useLanguage().setLanguage('en')
+  localStorage.clear()
+  document.body.innerHTML = ''
+})
 
 describe('App', () => {
-  it('shows the hero section first, then "Our solution"', () => {
+  it('shows the home page when no page is given', () => {
     const wrapper = mount(App)
 
     expect(wrapper.get('h1').text()).toBe('CelyMary Greener Precast Blocks')
     expect(wrapper.get('h2').text()).toBe('Our solution')
-    expect(wrapper.html().indexOf('<h1')).toBeLessThan(wrapper.html().indexOf('<h2'))
   })
 
-  it('shows the sections in order after the hero', () => {
-    const wrapper = mount(App)
+  it('puts the header with the menu before the main content', () => {
+    const html = mount(App).html()
 
-    expect(wrapper.findAll('h2').map((heading) => heading.text())).toEqual([
-      'Our solution',
-      'Our planned products',
-      'Work with us',
-      'Stage and roadmap',
-      'Team',
-      'Contact us',
-    ])
+    expect(html.indexOf('<header')).toBeGreaterThanOrEqual(0)
+    expect(html.indexOf('<header')).toBeLessThan(html.indexOf('<main'))
   })
 
-  it('has a section for the "Work with us" button to scroll to', () => {
+  it('has a single main landmark that the skip link can move focus to', () => {
     const wrapper = mount(App)
-    const button = wrapper.get('a[href="#work-with-us"]')
-
-    expect(button.text()).toBe('Work with us')
-    expect(wrapper.get('section#work-with-us').find('h2').text()).toBe('Work with us')
-  })
-
-  it('has a single main landmark and a single main heading', () => {
-    const wrapper = mount(App)
+    const main = wrapper.get('main')
 
     expect(wrapper.findAll('main')).toHaveLength(1)
-    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(main.attributes('id')).toBe('main-content')
+    expect(main.attributes('tabindex')).toBe('-1')
   })
 
-  it('every hero button points to a section that exists on the page', () => {
-    const wrapper = mount(App)
-    const links = wrapper.findAll('section a[href^="#"]')
+  describe('skip link', () => {
+    it('is the first link on the page and jumps to the main content', () => {
+      const first = mount(App).get('a')
 
-    expect(links.map((link) => link.text())).toEqual(['Work with us', 'Contact'])
-    for (const link of links) {
-      const targetId = link.attributes('href')!.slice(1)
-      expect(wrapper.find(`[id="${targetId}"]`).exists()).toBe(true)
-    }
+      expect(first.text()).toBe('Skip to main content')
+      expect(first.attributes('href')).toBe('#main-content')
+    })
+
+    it('is hidden until it gets keyboard focus', () => {
+      const classes = mount(App).get('a').classes()
+
+      expect(classes).toContain('sr-only')
+      expect(classes).toContain('focus:not-sr-only')
+    })
+
+    it('is translated with the page', async () => {
+      const wrapper = mount(App)
+
+      useLanguage().setLanguage('am')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.get('a').text()).toBe('ወደ ዋናው ይዘት ይዝለሉ')
+    })
   })
 })

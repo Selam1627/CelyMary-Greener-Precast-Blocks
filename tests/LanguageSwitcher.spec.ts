@@ -6,20 +6,21 @@ import App from '@/App.vue'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue'
 import { useLanguage } from '@/composables/useLanguage'
 import { siteContent } from '@/content/siteContent'
+import type { PageId } from '@/pages'
 
 /** Mounted on the page, because keyboard focus needs a real document. */
 function mountSwitcher() {
   return mount(LanguageSwitcher, { attachTo: document.body })
 }
 
-function mountPage() {
-  return mount(App, { attachTo: document.body })
+function mountPage(page: PageId = 'home') {
+  return mount(App, { props: { page }, attachTo: document.body })
 }
 
 type Wrapper = VueWrapper
 
 function toggle(wrapper: Wrapper) {
-  return wrapper.get('nav > button')
+  return wrapper.get('button[aria-controls="language-menu"]')
 }
 
 function menu(wrapper: Wrapper) {
@@ -101,8 +102,8 @@ describe('LanguageSwitcher', () => {
 
       const texts = siteContent[code]
       expect(wrapper.get('h2').text()).toBe(texts.solution.heading)
-      expect(wrapper.get('#contact-heading').text()).toBe(texts.contact.heading)
-      expect(wrapper.get('a[href="#work-with-us"]').text()).toBe(texts.hero.actions[0]!.label)
+      expect(wrapper.get('#site-menu').text()).toContain(texts.navigation.pages.products)
+      expect(wrapper.get('main a[href="/about"]').text()).toBe(texts.hero.actions[0]!.label)
       expect(document.documentElement.lang).toBe(code)
       expect(toggle(wrapper).text()).toBe(shortCode)
     })

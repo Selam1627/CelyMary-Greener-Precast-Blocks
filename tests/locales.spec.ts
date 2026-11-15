@@ -147,3 +147,19 @@ describe('Tigrinya spelling', () => {
     }
   })
 })
+
+describe("the founder's wording in the menu", () => {
+  it.each([
+    ['ti', 'መእተዊ'],
+    ['am', 'መግቢያ'],
+  ] as const)('uses "%2$s" for Home in %1$s', (code, home) => {
+    expect(siteContent[code].navigation.pages.home).toBe(home)
+  })
+
+  it.each([
+    ['ti', 'መእተዊ'],
+    ['am', 'መግቢያ'],
+  ] as const)('uses the same word for Home in the 404 page link in %s', (code, home) => {
+    expect(siteContent[code].notFound.homeLink).toContain(home)
+  })
+})

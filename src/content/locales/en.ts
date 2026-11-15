@@ -2,16 +2,35 @@
 import type { SiteContent } from '../types.js'
 
 export const en: SiteContent = {
+  navigation: {
+    skipLink: 'Skip to main content',
+    menuLabel: 'Main menu',
+    menuButton: 'Menu',
+    pages: {
+      home: 'Home',
+      products: 'Products',
+      about: 'About us',
+      contact: 'Contact',
+    },
+  },
+
+  notFound: {
+    heading: 'Page not found',
+    message: "Sorry, we couldn't find the page you were looking for.",
+    homeLink: 'Go to the home page',
+  },
+
   languageSwitcher: {
     label: 'Language',
   },
 
   hero: {
     companyName: 'CelyMary Greener Precast Blocks',
+    companyShortName: 'CelyMary',
     tagline: 'Low-carbon precast blocks for sustainable buildings.',
     actions: [
-      { label: 'Work with us', href: '#work-with-us' },
-      { label: 'Contact', href: '#contact' },
+      { label: 'Work with us', href: '/about' },
+      { label: 'Contact', href: '/contact' },
     ],
   },
 

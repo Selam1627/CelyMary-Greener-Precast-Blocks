@@ -128,4 +128,22 @@ describe('ProductsSection', () => {
       expect(wrapper.get('h2').text()).toBe('Our planned products')
     })
   })
+
+  describe('heading level', () => {
+    it('uses a section heading by default', () => {
+      const wrapper = mount(ProductsSection)
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.get('h2').text()).toBe('Our planned products')
+    })
+
+    it('can be the main heading, when the section opens its page', () => {
+      const wrapper = mount(ProductsSection, { props: { headingLevel: 'h1' } })
+      const heading = wrapper.get('h1')
+
+      expect(heading.text()).toBe('Our planned products')
+      expect(wrapper.find('h2').exists()).toBe(false)
+      expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
+    })
+  })
 })

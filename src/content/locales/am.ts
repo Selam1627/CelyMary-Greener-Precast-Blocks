@@ -4,18 +4,38 @@
 import type { SiteContent } from '../types.js'
 
 export const am: SiteContent = {
+  navigation: {
+    skipLink: 'ወደ ዋናው ይዘት ይዝለሉ',
+    menuLabel: 'ዋና ማውጫ',
+    menuButton: 'ማውጫ',
+    pages: {
+      // The founder's wording: keep exactly as it is.
+      home: 'መግቢያ',
+      products: 'ምርቶች',
+      about: 'ስለ እኛ',
+      contact: 'ያግኙን',
+    },
+  },
+
+  notFound: {
+    heading: 'ገጹ አልተገኘም',
+    message: 'ይቅርታ፣ የፈለጉትን ገጽ ማግኘት አልቻልንም።',
+    homeLink: 'ወደ መግቢያ ገጽ ይሂዱ',
+  },
+
   languageSwitcher: {
     label: 'ቋንቋ',
   },
 
   hero: {
     companyName: 'CelyMary Greener Precast Blocks',
+    companyShortName: 'ሰሊሜሪ',
     companyNameGeez: 'ሰሊሜሪ አረንጓዴ ብሎኬት',
     // The founder's wording: keep exactly as it is.
     tagline: 'ዝቅተኛ ካርቦን ያለው ብሎኬት ለአረንጓዴ ሕንፃዎች',
     actions: [
-      { label: 'ከእኛ ጋር ይሥሩ', href: '#work-with-us' },
-      { label: 'ያግኙን', href: '#contact' },
+      { label: 'ከእኛ ጋር ይሥሩ', href: '/about' },
+      { label: 'ያግኙን', href: '/contact' },
     ],
   },
 

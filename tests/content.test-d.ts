@@ -27,26 +27,45 @@ const { contact, hero, products, solution, team } = en
 
 describe('content types: expected errors', () => {
   it('rejects a button link that is not an in-page anchor', () => {
-    // @ts-expect-error: href must start with "#"
+    // @ts-expect-error: href must be the address of one of the site's pages
     const external: HeroAction = { label: 'Work with us', href: 'https://example.com' }
 
-    // @ts-expect-error: href must start with "#"
-    const bare: HeroAction = { label: 'Contact', href: 'contact' }
+    // @ts-expect-error: href must be the address of one of the site's pages
+    const anchor: HeroAction = { label: 'Contact', href: '#contact' }
+
+    // @ts-expect-error: href must be the address of one of the site's pages
+    const unknown: HeroAction = { label: 'Contact', href: '/contact-us' }
 
     expectTypeOf(external).toEqualTypeOf<HeroAction>()
-    expectTypeOf(bare).toEqualTypeOf<HeroAction>()
+    expectTypeOf(anchor).toEqualTypeOf<HeroAction>()
+    expectTypeOf(unknown).toEqualTypeOf<HeroAction>()
   })
 
   it('rejects a button without a label', () => {
     // @ts-expect-error: label is required
-    const action: HeroAction = { href: '#contact' }
+    const action: HeroAction = { href: '/contact' }
 
     expectTypeOf(action).toEqualTypeOf<HeroAction>()
   })
 
   it('rejects hero content without a tagline', () => {
     // @ts-expect-error: tagline is required
-    const content: HeroContent = { companyName: 'CelyMary Greener Precast Blocks', actions: [] }
+    const content: HeroContent = {
+      companyName: 'CelyMary Greener Precast Blocks',
+      companyShortName: 'CelyMary',
+      actions: [],
+    }
+
+    expectTypeOf(content).toEqualTypeOf<HeroContent>()
+  })
+
+  it('rejects hero content without the short name for the header on phones', () => {
+    // @ts-expect-error: companyShortName is required
+    const content: HeroContent = {
+      companyName: 'CelyMary Greener Precast Blocks',
+      tagline: 'Test tagline.',
+      actions: [],
+    }
 
     expectTypeOf(content).toEqualTypeOf<HeroContent>()
   })
@@ -199,7 +218,7 @@ describe('content types: expected errors', () => {
 
   it('does not allow adding buttons or benefits from code at runtime', () => {
     // @ts-expect-error: actions is read-only
-    hero.actions.push({ label: 'Extra', href: '#extra' })
+    hero.actions.push({ label: 'Extra', href: '/products' })
 
     // @ts-expect-error: benefits is read-only
     solution.benefits.push({ title: 'Extra', description: 'Extra.' })
