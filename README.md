@@ -2,7 +2,7 @@
 
 ## What it is
 
-CelyMary Greener Precast Blocks is an early-stage company planning lower-carbon building blocks, and this one-page website shows what it wants to make and how to contact it.
+CelyMary Greener Precast Blocks is an early-stage company planning lower-carbon building blocks, and this small website shows what it wants to make and how to contact it.
 
 **The problem:** the people who might work with the company have no single place to learn what it offers or how to reach it.
 
@@ -29,10 +29,12 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 | ----- | ------------------------------------------------------------------------------------ |
 | US-09 | Form backend: the contact form sends the message from the website, with no email app |
 | US-05 | Languages: English, Spanish, Tigrinya (ትግርኛ) and Amharic (አማርኛ)                      |
+| US-08 | Separate pages: Home, Products, About us and Contact, with a menu                    |
 
 ### What the live site has
 
-- **Hero:** the company name, tagline and buttons that lead to "Work with us" and "Contact".
+- **Pages:** Home, Products, About us and Contact, each with its own address, and a menu on every page that collapses into a menu button on phones.
+- **Hero:** the company name, tagline and buttons that open the About us and Contact pages.
 - **Our solution:** the three benefits.
 - **Products:** five planned product types with icons, all marked "In development".
 - **Work with us:** what the company offers customers, investors and partners.
@@ -47,7 +49,6 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 | ----- | ------------------------------------------------- |
 | US-06 | News and milestones                               |
 | US-07 | Carbon savings calculator, only with real figures |
-| US-08 | Separate pages                                    |
 
 ## How to run it
 
@@ -85,6 +86,22 @@ The form posts to `/api/contact`, a Vercel function ([api/contact.ts](api/contac
 - **Spam protection:** a hidden field that people never see but many bots fill in, and a minimum time to fill in the form. Messages caught by either are dropped without telling the sender. The server also re-checks every field and limits the request size.
 - **Local testing:** `npm run dev` answers `/api/contact` with the same code, reading the variables from `.env`, so you don't need the Vercel CLI. With a real `RESEND_API_KEY` in `.env`, the form sends real emails. `npm run preview` serves only the static site, so the form can't send from there.
 - **Errors:** the server logs why a message couldn't be sent (a missing variable, or Resend's reason), never the API key. On Vercel, these appear in the project's function logs.
+
+### Pages and addresses
+
+| Address       | Page           | What it shows                   |
+| ------------- | -------------- | ------------------------------- |
+| `/`           | Home           | Hero and "Our solution"         |
+| `/products`   | Products       | The planned products            |
+| `/about`      | About us       | Work with us, roadmap and team  |
+| `/contact`    | Contact        | The contact form                |
+| anything else | Page not found | A 404 status and a link to Home |
+
+- **How it works:** each page is a real HTML file at the project root (`index.html`, `products.html`, `about.html`, `contact.html`, `404.html`), listed in [src/pages.ts](src/pages.ts). Vite builds them all, and they share one script. The `data-page` attribute in each file tells the script which sections to show.
+- **On Vercel:** `cleanUrls` serves `products.html` at `/products` and redirects `/products.html` there. `trailingSlash: false` redirects `/products/` to `/products`. There are no rewrites, so an unknown address gets a real 404 status, and Vercel shows `404.html`. Don't add a catch-all rewrite: that was the routing bug fixed in v0.1.1.
+- **Locally:** `npm run dev` and `npm run preview` serve the same addresses, and answer unknown addresses with the 404 page and a 404 status.
+- **Menu:** every page has the menu and the language switcher. On phones the menu collapses into a menu button. A "Skip to main content" link appears first when using the keyboard.
+- **Titles:** each page has its own browser tab title. The HTML file has the English title, and the page switches it to the visitor's language once it loads.
 
 ### Languages
 
@@ -173,13 +190,14 @@ docker compose run --rm app npm run test
 │   ├── assets/                # Images processed by Vite
 │   ├── components/
 │   │   ├── sections/          # One component per page section
-│   │   └── ui/                # Small reusable pieces (buttons, cards…)
+│   │   └── ui/                # Header and menu, language switcher, icons
 │   ├── composables/           # Shared state (the current language)
 │   ├── content/               # Site text and data, by language
 │   │   └── locales/           # One file per language: en, es, ti, am
 │   ├── server/                # Server-only code (contact form handler)
 │   ├── utils/                 # Plain TypeScript helpers (contact form rules)
-│   ├── App.vue                # Page layout: puts the sections in order
+│   ├── App.vue                # Page layout: header, then the page's sections
+│   ├── pages.ts               # The pages and their addresses
 │   ├── env.d.ts               # Types for environment variables
 │   ├── main.ts                # App entry point
 │   └── style.css              # Tailwind entry point
@@ -187,7 +205,7 @@ docker compose run --rm app npm run test
 ├── .env.example               # Environment variables (no real values)
 ├── docker-compose.yml         # Dev container service "app"
 ├── Dockerfile                 # Dev image (Node.js 24)
-├── index.html
+├── index.html                 # Home page (also products, about, contact, 404)
 ├── vercel.json                # Vercel build settings
 ├── vite.config.ts
 ├── vitest.config.ts
@@ -200,7 +218,7 @@ docker compose run --rm app npm run test
 
 ### Deployment
 
-Vercel builds the site with `npm run build` and serves the static files from `dist/`. The site has one page and no router, so unknown paths return a 404. Vercel also turns each file in `api/` into a serverless function, so `/api/contact` is the only server route.
+Vercel builds the site with `npm run build` and serves the static files from `dist/`. Each page is its own HTML file, served at a clean address such as `/products`. There is no router and no rewrite, so unknown addresses return a real 404 with the site's 404 page (see [Pages and addresses](#pages-and-addresses)). Vercel also turns each file in `api/` into a serverless function, so `/api/contact` is the only server route.
 
 Set `VITE_CONTACT_EMAIL`, `RESEND_API_KEY` and `CONTACT_FROM_EMAIL` in the Vercel project settings (**Settings → Environment Variables**) for Production and Preview. Redeploy after changing them.
 

@@ -561,4 +561,22 @@ describe('ContactSection', () => {
       expect(valueOf(wrapper, '#contact-message')).toBe('Test message.')
     })
   })
+
+  describe('heading level', () => {
+    it('uses a section heading by default', () => {
+      const wrapper = mount(ContactSection)
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.get('h2').text()).toBe('Contact us')
+    })
+
+    it('can be the main heading, when the section opens its page', () => {
+      const wrapper = mount(ContactSection, { props: { headingLevel: 'h1' } })
+      const heading = wrapper.get('h1')
+
+      expect(heading.text()).toBe('Contact us')
+      expect(wrapper.find('h2').exists()).toBe(false)
+      expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
+    })
+  })
 })

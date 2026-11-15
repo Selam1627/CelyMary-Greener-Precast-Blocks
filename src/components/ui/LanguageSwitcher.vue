@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
+import { useDismiss } from '@/composables/useDismiss'
 import { useLanguage } from '@/composables/useLanguage'
 import { findLanguage, languages, type LanguageCode } from '@/content/languages'
 
@@ -91,19 +92,11 @@ function onToggleKeydown(event: KeyboardEvent) {
   }
 }
 
-/** Closes the menu when focus moves elsewhere, for example with Tab. */
-function onFocusOut(event: FocusEvent) {
-  const next = event.relatedTarget as Node | null
-  if (next && !root.value?.contains(next)) closeMenu()
-}
-
-/** Closes the menu on a tap or click anywhere else on the page. */
-function onDocumentPointerDown(event: PointerEvent) {
-  if (open.value && !root.value?.contains(event.target as Node)) closeMenu()
-}
-
-onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown))
+const { onFocusOut } = useDismiss(
+  root,
+  () => open.value,
+  () => closeMenu(),
+)
 </script>
 
 <template>

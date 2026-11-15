@@ -5,13 +5,21 @@ import App from '@/App.vue'
 import { useLanguage } from '@/composables/useLanguage'
 import { languages, type LanguageCode } from '@/content/languages'
 import { siteContent } from '@/content/siteContent'
+import { menuPages, notFoundPage, type PageId } from '@/pages'
 
 const codes = languages.map((language) => language.code)
 
-/** Mounts the whole page in one language. */
-function mountPage(code: LanguageCode) {
+const allPages: PageId[] = [...menuPages.map((page) => page.id), notFoundPage.id]
+
+/** Mounts one page of the site in one language. */
+function mountPage(code: LanguageCode, page: PageId = 'home') {
   useLanguage().setLanguage(code)
-  return mount(App)
+  return mount(App, { props: { page } })
+}
+
+/** The text of every page of the site, in one language. */
+function siteText(code: LanguageCode) {
+  return allPages.map((page) => mountPage(code, page).text()).join(' ')
 }
 
 afterEach(() => {
@@ -53,9 +61,11 @@ describe('site content', () => {
   describe.each(codes)('edge cases (%s)', (code) => {
     const { hero, solution, products, audiences, roadmap, team, contact } = siteContent[code]
 
-    it('uses in-page anchors with valid section ids for every button', () => {
+    it("links every button to one of the site's pages", () => {
+      const paths: string[] = menuPages.map((page) => page.path)
+
       for (const action of hero.actions) {
-        expect(action.href).toMatch(/^#[a-z][a-z0-9-]*$/)
+        expect(paths).toContain(action.href)
       }
     })
 
@@ -180,7 +190,7 @@ describe('site content', () => {
     it.each(codes)(
       'never mentions recipes, formulations or the production process (%s)',
       (code) => {
-        const pageText = mountPage(code).text().toLowerCase()
+        const pageText = siteText(code).toLowerCase()
 
         for (const word of forbiddenWords[code]) {
           expect(pageText).not.toContain(word)
@@ -191,7 +201,7 @@ describe('site content', () => {
     it.each(['en', 'es'] as const)(
       'gives no technical specifications for products (%s)',
       (code) => {
-        const productText = mountPage(code).get('#products').text().toLowerCase()
+        const productText = mountPage(code, 'products').get('#products').text().toLowerCase()
 
         for (const word of specWords[code]!) {
           expect(productText).not.toContain(word)
@@ -200,7 +210,7 @@ describe('site content', () => {
     )
 
     it.each(codes)('contains no figures, so no unverified statistics (%s)', (code) => {
-      const pageText = mountPage(code).text()
+      const pageText = siteText(code)
 
       // Any number: Western digits, Ethiopic numerals and others.
       expect(pageText).not.toMatch(/\p{N}/u)
@@ -208,7 +218,7 @@ describe('site content', () => {
 
     it.each(codes)('labels every product as in development (%s)', (code) => {
       const { statusLabel, items } = siteContent[code].products
-      const cards = mountPage(code).get('#products').findAll('li')
+      const cards = mountPage(code, 'products').get('#products').findAll('li')
 
       expect(cards).toHaveLength(items.length)
       for (const card of cards) {

@@ -4,16 +4,35 @@
 import type { SiteContent } from '../types.js'
 
 export const es: SiteContent = {
+  navigation: {
+    skipLink: 'Saltar al contenido principal',
+    menuLabel: 'Menú principal',
+    menuButton: 'Menú',
+    pages: {
+      home: 'Inicio',
+      products: 'Productos',
+      about: 'Sobre nosotros',
+      contact: 'Contacto',
+    },
+  },
+
+  notFound: {
+    heading: 'Página no encontrada',
+    message: 'Lo sentimos, no hemos encontrado la página que buscabas.',
+    homeLink: 'Ir a la página de inicio',
+  },
+
   languageSwitcher: {
     label: 'Idioma',
   },
 
   hero: {
     companyName: 'CelyMary Greener Precast Blocks',
+    companyShortName: 'CelyMary',
     tagline: 'Bloques prefabricados bajos en carbono para edificios sostenibles.',
     actions: [
-      { label: 'Trabaja con nosotros', href: '#work-with-us' },
-      { label: 'Contacto', href: '#contact' },
+      { label: 'Trabaja con nosotros', href: '/about' },
+      { label: 'Contacto', href: '/contact' },
     ],
   },
 

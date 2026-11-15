@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Project
 
-A one-page company website for **CelyMary Greener Precast Blocks**, an early-stage startup making precast blocks with a much lower carbon footprint than conventional concrete blocks.
+A small company website (four pages) for **CelyMary Greener Precast Blocks**, an early-stage startup making precast blocks with a much lower carbon footprint than conventional concrete blocks.
 
 - **Audience:** architects, engineers, builders, real estate developers, potential investors and collaboration partners.
 - **Problem it solves:** these people have no single place to learn what the company offers and get in touch.
@@ -17,7 +17,8 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 - Vitest for tests
 - ESLint + Prettier
 - DevContainer with Docker / docker compose
-- Vercel: static build to `dist/`, configured in `vercel.json`. No SPA fallback: the site has one page and no router, so unknown paths return a 404
+- Vercel: static build to `dist/`, configured in `vercel.json`.
+- Pages (US-08): each page is a real HTML file at the project root (`index.html`, `products.html`, `about.html`, `contact.html`), listed in `src/pages.ts` and built by Vite in multi-page mode (`appType: 'mpa'`). Vercel serves them at clean addresses (`/products`) with `cleanUrls` and `trailingSlash: false`. There is no router and **no rewrite**: never add `rewrites`, `routes` or a catch-all that sends unknown addresses to a page, which caused the routing bug fixed in v0.1.1. Unknown addresses get a real 404 status with the page in `404.html`; `vite.config.ts` does the same in development and preview
 - One Vercel serverless function, `api/contact.ts` (`POST /api/contact`), sends the contact form to the company inbox through [Resend](https://resend.com). In development, `vite.config.ts` serves the same route, so the form works with `npm run dev`
 
 ## Working rules
@@ -62,7 +63,8 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 
 ## Conventions
 
-- Components: `<script setup lang="ts">`, PascalCase file names, one component per page section in `src/components/sections/` (for example `HeroSection.vue`).
+- Components: `<script setup lang="ts">`, PascalCase file names, one component per page section in `src/components/sections/` (for example `HeroSection.vue`). `App.vue` chooses the sections for each page; the page comes from `data-page` in its HTML file.
+- Adding a page: add its HTML file (copy one, change `data-page`, the English `<title>` and the description), add it to `src/pages.ts`, give it a menu name in all four language files, and choose its sections in `App.vue`. Each page has exactly one `<h1>`: a section that opens a page takes `heading-level="h1"`.
 - Reusable small pieces go in `src/components/ui/`.
 - Server code goes in `src/server/` and must never be imported by website code. Files in `api/` stay thin entry points that call it.
 - Vercel runs `api/` as native ES modules without the `@/` alias. So `src/server/` and any website code it imports (such as `src/utils/contactForm.ts` and `src/content/`) use relative imports ending in `.js`. `tsconfig.api.json` checks this.
@@ -94,10 +96,10 @@ A one-page company website for **CelyMary Greener Precast Blocks**, an early-sta
 ### Built after the MVP
 
 - **US-09 — Form backend:** the contact form sends the message from the website itself through `/api/contact`, with no email app, to the address in `VITE_CONTACT_EMAIL`. It keeps the fields and validation, and shows a clear success or error message. The "Or write to us directly at…" link stays as a fallback. Spam protection: a hidden trap field, a minimum fill time, and server-side checks.
+- **US-08 — Separate pages:** four pages with their own addresses and browser tab titles: Home `/` (hero and "Our solution"), Products `/products`, About us `/about` (work with us, roadmap and team) and Contact `/contact` (the contact form). A menu on every page, with the language switcher; on phones it collapses into a menu button. The current page is marked in the menu. The hero buttons open the About us and Contact pages. A skip link jumps past the menu. Unknown addresses show a "page not found" page with a real 404 status, in all four languages.
 - **US-05 — Languages:** the site in English, Spanish, Tigrinya (ትግርኛ) and Amharic (አማርኛ), so partners in Spain and Ethiopia can read it. A language switcher on every screen size shows each language in its own name and script. Every text is available in all four languages, including the contact form's labels, validation, success and error messages. English stays the default. The visitor's choice is remembered, and the page's `lang` attribute follows it. Ethiopic script uses Noto Sans Ethiopic, served with the site. The form works in every language, and the email the company receives stays in English.
 
 ### Backlog
 
 - **US-06 — News and milestones.**
 - **US-07 — Carbon savings calculator.** Do not build it without real, user-provided figures (see Honesty).
-- **US-08 — Separate pages.**

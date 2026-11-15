@@ -96,4 +96,22 @@ describe('AudiencesSection', () => {
       expect(wrapper.get('h2').text()).toBe('Work with us')
     })
   })
+
+  describe('heading level', () => {
+    it('uses a section heading by default', () => {
+      const wrapper = mount(AudiencesSection)
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.get('h2').text()).toBe('Work with us')
+    })
+
+    it('can be the main heading, when the section opens its page', () => {
+      const wrapper = mount(AudiencesSection, { props: { headingLevel: 'h1' } })
+      const heading = wrapper.get('h1')
+
+      expect(heading.text()).toBe('Work with us')
+      expect(wrapper.find('h2').exists()).toBe(false)
+      expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
+    })
+  })
 })

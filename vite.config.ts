@@ -1,9 +1,13 @@
-import type { IncomingMessage } from 'node:http'
+import { existsSync, readFileSync } from 'node:fs'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { extname, join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
+
+import { htmlFiles, notFoundPage } from './src/pages.ts'
 
 // File change events from a Windows host don't reach the container, so
 // docker-compose.yml sets DEV_WATCH_POLLING=true to make Vite poll instead.
@@ -64,8 +68,78 @@ function contactApiInDev(): Plugin {
   }
 }
 
+/**
+ * Decides whether a page request has no page to serve: an address with no
+ * HTML file in `dir`. Vite has already turned "/products" into
+ * "/products.html" when that file exists. Requests for other files (scripts,
+ * images) and requests that aren't for a page are left alone.
+ */
+function isMissingPage(req: IncomingMessage, dir: string): boolean {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return false
+  if (!req.headers.accept?.includes('text/html')) return false
+
+  const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname)
+  const file = pathname.endsWith('/')
+    ? `${pathname}index.html`
+    : pathname.endsWith('.html')
+      ? pathname
+      : extname(pathname) === ''
+        ? `${pathname}.html`
+        : null
+
+  return file !== null && !existsSync(join(dir, file))
+}
+
+function sendNotFound(res: ServerResponse, html: string) {
+  res.statusCode = 404
+  res.setHeader('Content-Type', 'text/html; charset=utf-8')
+  res.end(html)
+}
+
+/**
+ * Development and preview only: answers addresses without a page with the
+ * site's 404 page and a 404 status, as Vercel does with 404.html.
+ */
+function notFoundPageLocally(): Plugin {
+  return {
+    name: 'not-found-page-locally',
+    configureServer(server) {
+      // Runs after Vite's own page handling, so only unmatched requests get here.
+      return () => {
+        server.middlewares.use(async (req, res, next) => {
+          if (!isMissingPage(req, server.config.root)) return next()
+          const source = readFileSync(join(server.config.root, notFoundPage.file), 'utf8')
+          sendNotFound(res, await server.transformIndexHtml(req.url ?? '/', source))
+        })
+      }
+    },
+    configurePreviewServer(server) {
+      const outDir = join(server.config.root, server.config.build.outDir)
+      return () => {
+        server.middlewares.use((req, res, next) => {
+          if (!isMissingPage(req, outDir)) return next()
+          sendNotFound(res, readFileSync(join(outDir, notFoundPage.file), 'utf8'))
+        })
+      }
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), contactApiInDev()],
+  plugins: [vue(), tailwindcss(), contactApiInDev(), notFoundPageLocally()],
+  // Several real pages, not a single-page app: no fallback to index.html, so
+  // unknown addresses stay 404s, as on Vercel.
+  appType: 'mpa',
+  build: {
+    rolldownOptions: {
+      input: Object.fromEntries(
+        htmlFiles.map((file) => [
+          file.replace(/\.html$/, ''),
+          fileURLToPath(new URL(file, import.meta.url)),
+        ]),
+      ),
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
