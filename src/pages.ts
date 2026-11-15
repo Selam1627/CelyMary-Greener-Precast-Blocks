@@ -5,6 +5,7 @@
 //
 // Also imported by vite.config.ts, so no "@/" imports here.
 
+/** The pages in the header menu, in order. */
 export const menuPages = [
   { id: 'home', path: '/', file: 'index.html' },
   { id: 'products', path: '/products', file: 'products.html' },
@@ -12,20 +13,31 @@ export const menuPages = [
   { id: 'contact', path: '/contact', file: 'contact.html' },
 ] as const
 
+/** Linked from the footer and the contact form, not from the header menu. */
+export const privacyPage = { id: 'privacy', path: '/privacy', file: 'privacy.html' } as const
+
+/** The pages in the footer, in order. */
+export const footerPages = [...menuPages, privacyPage] as const
+
 /** The page Vercel shows, with a 404 status, for any address without a file. */
 export const notFoundPage = { id: 'not-found', file: '404.html' } as const
 
+/** Every page, each with its HTML file. */
+export const allPages = [...footerPages, notFoundPage] as const
+
 export type MenuPageId = (typeof menuPages)[number]['id']
-export type PageId = MenuPageId | typeof notFoundPage.id
-export type PagePath = (typeof menuPages)[number]['path']
+/** Pages with their own address. */
+export type AddressedPageId = (typeof footerPages)[number]['id']
+export type PageId = (typeof allPages)[number]['id']
+export type PagePath = (typeof footerPages)[number]['path']
 
 /** Every HTML file Vite builds, by name. */
-export const htmlFiles = [...menuPages, notFoundPage].map((page) => page.file)
+export const htmlFiles = allPages.map((page) => page.file)
 
 export function isPageId(value: unknown): value is PageId {
-  return value === notFoundPage.id || menuPages.some((page) => page.id === value)
+  return allPages.some((page) => page.id === value)
 }
 
-export function pathOf(id: MenuPageId): PagePath {
-  return menuPages.find((page) => page.id === id)!.path
+export function pathOf(id: AddressedPageId): PagePath {
+  return footerPages.find((page) => page.id === id)!.path
 }

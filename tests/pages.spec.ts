@@ -6,10 +6,10 @@ import App from '@/App.vue'
 import { useLanguage } from '@/composables/useLanguage'
 import { languages } from '@/content/languages'
 import { siteContent } from '@/content/siteContent'
-import { menuPages, notFoundPage, pathOf, type PageId } from '@/pages'
+import { allPages as pages, footerPages, menuPages, pathOf, type PageId } from '@/pages'
 import { pageTitle } from '@/utils/pageTitle'
 
-const allPages: PageId[] = [...menuPages.map((page) => page.id), notFoundPage.id]
+const allPages: PageId[] = pages.map((page) => page.id)
 const codes = languages.map((language) => language.code)
 
 function mountPage(page: PageId) {
@@ -58,6 +58,17 @@ describe('pages', () => {
       expect(wrapper.find('form').exists()).toBe(true)
     })
 
+    it('Privacy notice shows the privacy notice, and is not in the header menu', () => {
+      const wrapper = mountPage('privacy')
+
+      expect(sectionIds('privacy')).toEqual(['privacy'])
+      expect(wrapper.get('h1').text()).toBe('Privacy notice')
+      const menuPaths: string[] = menuPages.map((page) => page.path)
+      expect(menuPaths).not.toContain('/privacy')
+      expect(wrapper.get('#site-menu').find('a[href="/privacy"]').exists()).toBe(false)
+      expect(wrapper.get('footer').find('a[href="/privacy"]').exists()).toBe(true)
+    })
+
     it('the 404 page says the page was not found and links to Home', () => {
       const wrapper = mountPage('not-found')
       const link = wrapper.get('main a')
@@ -99,13 +110,18 @@ describe('pages', () => {
       },
     )
 
-    it.each(allPages)('the %s page has a single header, menu and language switcher', (page) => {
-      const wrapper = mountPage(page)
+    it.each(allPages)(
+      'the %s page has a single header, menu, language switcher and footer',
+      (page) => {
+        const wrapper = mountPage(page)
 
-      expect(wrapper.findAll('header')).toHaveLength(1)
-      expect(wrapper.findAll('#site-menu')).toHaveLength(1)
-      expect(wrapper.findAll('#language-menu')).toHaveLength(1)
-    })
+        expect(wrapper.findAll('header')).toHaveLength(1)
+        expect(wrapper.findAll('footer')).toHaveLength(1)
+        expect(wrapper.html().indexOf('<main')).toBeLessThan(wrapper.html().indexOf('<footer'))
+        expect(wrapper.findAll('#site-menu')).toHaveLength(1)
+        expect(wrapper.findAll('#language-menu')).toHaveLength(1)
+      },
+    )
 
     it('keeps the headings that follow the first one as section headings', () => {
       const headings = mountPage('about')
@@ -122,6 +138,7 @@ describe('pages', () => {
       ['products', 'Products – CelyMary Greener Precast Blocks'],
       ['about', 'About us – CelyMary Greener Precast Blocks'],
       ['contact', 'Contact – CelyMary Greener Precast Blocks'],
+      ['privacy', 'Privacy notice – CelyMary Greener Precast Blocks'],
       ['not-found', 'Page not found – CelyMary Greener Precast Blocks'],
     ] as const)('the %s page is titled "%s"', (page, title) => {
       mountPage(page)
@@ -160,17 +177,19 @@ describe('pages', () => {
       expect(mountPage('products').get('h1').text()).toBe(texts.products.heading)
       expect(mountPage('about').get('h1').text()).toBe(texts.audiences.heading)
       expect(mountPage('contact').get('h1').text()).toBe(texts.contact.heading)
+      expect(mountPage('privacy').get('h1').text()).toBe(texts.privacy.heading)
       expect(mountPage('not-found').get('h1').text()).toBe(texts.notFound.heading)
     })
   })
 
   describe('pathOf', () => {
     it('gives each page its address', () => {
-      expect(menuPages.map((page) => pathOf(page.id))).toEqual([
+      expect(footerPages.map((page) => pathOf(page.id))).toEqual([
         '/',
         '/products',
         '/about',
         '/contact',
+        '/privacy',
       ])
     })
   })

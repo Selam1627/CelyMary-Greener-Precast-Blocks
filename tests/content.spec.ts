@@ -5,11 +5,11 @@ import App from '@/App.vue'
 import { useLanguage } from '@/composables/useLanguage'
 import { languages, type LanguageCode } from '@/content/languages'
 import { siteContent } from '@/content/siteContent'
-import { menuPages, notFoundPage, type PageId } from '@/pages'
+import { allPages as pages, menuPages, type PageId } from '@/pages'
 
 const codes = languages.map((language) => language.code)
 
-const allPages: PageId[] = [...menuPages.map((page) => page.id), notFoundPage.id]
+const allPages: PageId[] = pages.map((page) => page.id)
 
 /** Mounts one page of the site in one language. */
 function mountPage(code: LanguageCode, page: PageId = 'home') {
@@ -209,11 +209,25 @@ describe('site content', () => {
       },
     )
 
-    it.each(codes)('contains no figures, so no unverified statistics (%s)', (code) => {
-      const pageText = siteText(code)
+    it.each(codes)(
+      'contains no figures about the company or its products, so no unverified statistics (%s)',
+      (code) => {
+        // The company and product content: the main content of the menu pages.
+        // Only the footer (the copyright year) and the privacy notice (the
+        // retention period, the GDPR article) may contain numbers.
+        const contentText = menuPages
+          .map((page) => mountPage(code, page.id).get('main').text())
+          .join(' ')
 
-      // Any number: Western digits, Ethiopic numerals and others.
-      expect(pageText).not.toMatch(/\p{N}/u)
+        // Any number: Western digits, Ethiopic numerals and others.
+        expect(contentText).not.toMatch(/\p{N}/u)
+      },
+    )
+
+    it.each(codes)('has numbers only in the footer year and the privacy notice (%s)', (code) => {
+      const footer = mountPage(code, 'home').get('footer').text()
+
+      expect(footer.match(/\p{N}+/gu)).toEqual(['2026'])
     })
 
     it.each(codes)('labels every product as in development (%s)', (code) => {

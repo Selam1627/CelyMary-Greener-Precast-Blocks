@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { defaultLanguage, languages, type LanguageCode } from '@/content/languages'
 import { siteContent } from '@/content/siteContent'
 
-/** Values that must be identical in every language: links, ids, icons and names. */
+/**
+ * Values that must be identical in every language: links, ids, icons and the
+ * Latin company name (hero title and tab title). People's names, the
+ * copyright line and the company name in the text change script on the
+ * Tigrinya and Amharic pages; see "names in Ge'ez script" below.
+ */
 function isSameInEveryLanguage(path: string): boolean {
-  return (
-    /(^|\.)(id|href|icon)$/.test(path) ||
-    path === 'hero.companyName' ||
-    /^team\.members\[\d+\]\.name$/.test(path)
-  )
+  return /(^|\.)(id|href|icon)$/.test(path) || path === 'hero.companyName'
 }
 
 const translations = languages
@@ -162,4 +163,95 @@ describe("the founder's wording in the menu", () => {
   ] as const)('uses the same word for Home in the 404 page link in %s', (code, home) => {
     expect(siteContent[code].notFound.homeLink).toContain(home)
   })
+})
+
+describe("names in Ge'ez script", () => {
+  const geez = {
+    ti: { company: 'ሰሊሜሪ ሓምለዋይ ብሎኬት' },
+    am: { company: 'ሰሊሜሪ አረንጓዴ ብሎኬት' },
+  } as const
+  const teamNames = ['ሰላም በርሀ በየነ', 'ሜሮን ገብረስላሴ ታደሰ']
+
+  it.each(['ti', 'am'] as const)("writes the team members' names in Ge'ez in %s", (code) => {
+    expect(siteContent[code].team.members.map((member) => member.name)).toEqual(teamNames)
+  })
+
+  it.each(['ti', 'am'] as const)("writes the company name in Ge'ez in the %s footer", (code) => {
+    expect(siteContent[code].hero.companyNameGeez).toBe(geez[code].company)
+    expect(siteContent[code].footer.copyright).toBe(`© 2026 ${geez[code].company}`)
+  })
+
+  it.each(['ti', 'am'] as const)(
+    "names the responsible person in Ge'ez, with the official Latin name, in the %s privacy notice",
+    (code) => {
+      const responsible = siteContent[code].privacy.sections.find(
+        (part) => part.id === 'responsible',
+      )!
+
+      expect(responsible.paragraphs[0]).toContain('ሰላም በርሀ በየነ (Selam Berhe Beyene)')
+      expect(responsible.paragraphs[0]).toContain(geez[code].company)
+    },
+  )
+
+  it.each(['ti', 'am'] as const)(
+    'keeps Latin names only in the hero title and the bracketed official name (%s)',
+    (code) => {
+      for (const [path, text] of texts(siteContent[code])) {
+        if (path === 'hero.companyName') continue
+        const withoutOfficialName = text.replace('(Selam Berhe Beyene)', '')
+        expect(withoutOfficialName, path).not.toMatch(/CelyMary|Greener|Precast|Selam|Berhe|Meron/)
+      }
+    },
+  )
+
+  it.each(['en', 'es'] as const)('keeps every name in Latin letters in %s', (code) => {
+    const { team, footer, hero } = siteContent[code]
+
+    expect(hero.companyNameGeez).toBeUndefined()
+    expect(team.members.map((member) => member.name)).toEqual([
+      'Selam Berhe Beyene',
+      'Meron Gebreselassie Tadesse',
+    ])
+    expect(footer.copyright).toBe('© 2026 CelyMary Greener Precast Blocks')
+  })
+})
+
+describe("the university in the founder's bio", () => {
+  // The founder's wording for each language: keep exactly as it is.
+  it.each([
+    ['en', 'University of Cantabria'],
+    ['es', 'Universidad de Cantabria'],
+    ['ti', 'ዩኒቨርሲቲ ካንታብሪያ'],
+    ['am', 'ካንታብሪያ ዩኒቨርሲቲ'],
+  ] as const)('is written "%2$s" in %1$s', (code, university) => {
+    expect(siteContent[code].team.members[0]!.bio).toContain(university)
+  })
+
+  it.each(['en', 'ti', 'am'] as const)(
+    'keeps the Spanish name only on the Spanish page (%s)',
+    (code) => {
+      for (const [path, text] of texts(siteContent[code])) {
+        expect(text, path).not.toContain('Universidad')
+      }
+    },
+  )
+})
+
+describe("the founder's bio", () => {
+  it("is the founder's English wording, exactly", () => {
+    expect(siteContent.en.team.members[0]!.bio).toBe(
+      'PhD researcher in cement-sector decarbonization at the University of Cantabria.',
+    )
+  })
+
+  it.each(languages.map((language) => language.code))(
+    'is one short sentence about the research, with nothing about developing materials (%s)',
+    (code) => {
+      const bio = siteContent[code].team.members[0]!.bio
+
+      expect(bio).toMatch(/[.።]$/u)
+      expect(bio.match(/[.።፤;,，]/gu)).toHaveLength(1)
+      expect(bio).not.toMatch(/developing|desarrollando|ምምዕባል|በማልማት/)
+    },
+  )
 })
