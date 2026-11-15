@@ -30,9 +30,13 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 | US-09 | Form backend: the contact form sends the message from the website, with no email app |
 | US-05 | Languages: English, Spanish, Tigrinya (ትግርኛ) and Amharic (አማርኛ)                      |
 | US-08 | Separate pages: Home, Products, About us and Contact, with a menu                    |
+| US-10 | Brand, footer and privacy notice: logo, favicon, footer and a /privacy page          |
 
 ### What the live site has
 
+- **Brand:** the company logo ("Leaf on a block") next to the name in the header, and as the browser tab icon.
+- **Footer:** on every page, with the logo, the page links, the company email, a link to the privacy notice and the copyright line.
+- **Privacy notice:** at `/privacy`, in plain words, describing what the contact form collects and who processes it. A line under the contact form links to it.
 - **Pages:** Home, Products, About us and Contact, each with its own address, and a menu on every page that collapses into a menu button on phones.
 - **Hero:** the company name, tagline and buttons that open the About us and Contact pages.
 - **Our solution:** the three benefits.
@@ -89,19 +93,29 @@ The form posts to `/api/contact`, a Vercel function ([api/contact.ts](api/contac
 
 ### Pages and addresses
 
-| Address       | Page           | What it shows                   |
-| ------------- | -------------- | ------------------------------- |
-| `/`           | Home           | Hero and "Our solution"         |
-| `/products`   | Products       | The planned products            |
-| `/about`      | About us       | Work with us, roadmap and team  |
-| `/contact`    | Contact        | The contact form                |
-| anything else | Page not found | A 404 status and a link to Home |
+| Address       | Page           | What it shows                     |
+| ------------- | -------------- | --------------------------------- |
+| `/`           | Home           | Hero and "Our solution"           |
+| `/products`   | Products       | The planned products              |
+| `/about`      | About us       | Work with us, roadmap and team    |
+| `/contact`    | Contact        | The contact form                  |
+| `/privacy`    | Privacy notice | How the site handles visitor data |
+| anything else | Page not found | A 404 status and a link to Home   |
 
 - **How it works:** each page is a real HTML file at the project root (`index.html`, `products.html`, `about.html`, `contact.html`, `404.html`), listed in [src/pages.ts](src/pages.ts). Vite builds them all, and they share one script. The `data-page` attribute in each file tells the script which sections to show.
 - **On Vercel:** `cleanUrls` serves `products.html` at `/products` and redirects `/products.html` there. `trailingSlash: false` redirects `/products/` to `/products`. There are no rewrites, so an unknown address gets a real 404 status, and Vercel shows `404.html`. Don't add a catch-all rewrite: that was the routing bug fixed in v0.1.1.
 - **Locally:** `npm run dev` and `npm run preview` serve the same addresses, and answer unknown addresses with the 404 page and a 404 status.
 - **Menu:** every page has the menu and the language switcher. On phones the menu collapses into a menu button. A "Skip to main content" link appears first when using the keyboard.
 - **Titles:** each page has its own browser tab title. The HTML file has the English title, and the page switches it to the visitor's language once it loads.
+
+### Privacy notice
+
+The privacy notice at `/privacy` describes only what the code does. Its texts are in the `privacy` part of each file in [src/content/locales/](src/content/locales/).
+
+- **What the contact form collects:** name, email, visitor type, product (optional), message and the visitor's language. The two spam checks are not stored or emailed.
+- **Who processes it:** Vercel (hosting and the `/api/contact` function), Resend (email delivery) and the company's Gmail inbox. The site has no database, cookies, analytics or third-party scripts. The only browser storage is the language choice.
+- **Keep it true:** any change that affects visitor data (a new form field, a new service, logging, cookies or analytics) must update the notice in all four languages.
+- **Status:** the whole notice, English included, is a draft for legal review.
 
 ### Languages
 
@@ -185,7 +199,7 @@ docker compose run --rm app npm run test
 ├── api/
 │   └── contact.ts             # Vercel function: sends the contact form
 ├── docs/                      # Project documentation
-├── public/                    # Static files copied as-is (favicon, images)
+├── public/                    # Static files copied as-is (favicon.svg)
 ├── src/
 │   ├── assets/                # Images processed by Vite
 │   ├── components/
@@ -320,13 +334,13 @@ These rules shaped later work: products have no technical specs, the roadmap has
 **What doesn't work:**
 
 - A message can land in spam, as the first one did. Without its own domain, the form sends from Resend's test address, which makes this more likely.
-- The site has no favicon or `robots.txt`.
+- The site has no `robots.txt`.
 
 **The natural next step:** send a test message from the live site on a phone and on a laptop, to confirm the form works in production.
 
 After that:
 
 1. Once the company has its own domain, verify it in Resend so the form sends from the company's address.
-2. Add a favicon and `robots.txt`.
+2. Add a `robots.txt`.
 3. Review the Vercel plan when the company starts operating, because the free Hobby plan is for non-commercial use.
 4. Work through the rest of the backlog, adding the calculator only once real figures exist.
