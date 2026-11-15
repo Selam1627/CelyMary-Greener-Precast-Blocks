@@ -74,6 +74,25 @@ describe('SiteHeader', () => {
       ])
     })
 
+    it('shows the colour logo next to the name, with an accessible label', () => {
+      const logo = mountHeader().get('header > div > a').get('svg')
+
+      expect(logo.attributes('data-variant')).toBe('color')
+      expect(logo.attributes('role')).toBe('img')
+      expect(logo.attributes('aria-label')).toBe('CelyMary logo')
+    })
+
+    it.each(languages.map((language) => language.code))('labels the logo in %s', async (code) => {
+      const wrapper = mountHeader()
+
+      useLanguage().setLanguage(code)
+      await nextTick()
+
+      expect(wrapper.get('header svg[role="img"]').attributes('aria-label')).toBe(
+        siteContent[code].navigation.logoLabel,
+      )
+    })
+
     it('shows the short name on phones only, and the full name on wider screens', () => {
       const [short, full] = mountHeader().get('header > div > a').findAll('span')
 
@@ -82,13 +101,13 @@ describe('SiteHeader', () => {
     })
 
     it.each([
-      ['en', 'CelyMary'],
-      ['es', 'CelyMary'],
-      ['ti', 'ሰሊሜሪ'],
-      ['am', 'ሰሊሜሪ'],
+      ['en', 'CelyMary', 'CelyMary Greener Precast Blocks'],
+      ['es', 'CelyMary', 'CelyMary Greener Precast Blocks'],
+      ['ti', 'ሰሊሜሪ', 'ሰሊሜሪ ሓምለዋይ ብሎኬት'],
+      ['am', 'ሰሊሜሪ', 'ሰሊሜሪ አረንጓዴ ብሎኬት'],
     ] as const)(
-      'uses the short name "%2$s" in %1$s, with the full name in Latin letters',
-      async (code, short) => {
+      'uses the short name "%2$s" and the full name "%3$s" in %1$s',
+      async (code, short, full) => {
         const wrapper = mountHeader()
 
         useLanguage().setLanguage(code)
@@ -98,7 +117,7 @@ describe('SiteHeader', () => {
           .get('header > div > a')
           .findAll('span')
           .map((name) => name.text())
-        expect(names).toEqual([short, 'CelyMary Greener Precast Blocks'])
+        expect(names).toEqual([short, full])
       },
     )
 

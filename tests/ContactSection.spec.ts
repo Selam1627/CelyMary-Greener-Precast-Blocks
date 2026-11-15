@@ -179,7 +179,7 @@ describe('ContactSection', () => {
 
     it('shows the address as a direct email link', () => {
       const wrapper = mountForm()
-      const link = wrapper.get('form a')
+      const link = wrapper.get('form a[href^="mailto:"]')
 
       expect(link.attributes('href')).toBe(`mailto:${testAddress}`)
       expect(link.text()).toBe(testAddress)
@@ -243,7 +243,9 @@ describe('ContactSection', () => {
 
       await submit(wrapper)
 
-      expect(wrapper.get('form a').attributes('href')).toBe(`mailto:${testAddress}`)
+      expect(wrapper.get('form a[href^="mailto:"]').attributes('href')).toBe(
+        `mailto:${testAddress}`,
+      )
     })
 
     it('can try again after a failure, and then succeed', async () => {
@@ -266,7 +268,7 @@ describe('ContactSection', () => {
       vi.stubEnv('VITE_CONTACT_EMAIL', address as string)
       const wrapper = mountForm()
 
-      expect(wrapper.find('form a').exists()).toBe(false)
+      expect(wrapper.find('form a[href^="mailto:"]').exists()).toBe(false)
       expect(wrapper.text()).not.toContain('Or write to us directly at')
     })
   })
@@ -577,6 +579,32 @@ describe('ContactSection', () => {
       expect(heading.text()).toBe('Contact us')
       expect(wrapper.find('h2').exists()).toBe(false)
       expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
+    })
+  })
+
+  describe('privacy notice link', () => {
+    it('shows a short line under the form that links to the privacy notice', () => {
+      const wrapper = mountForm()
+      const link = wrapper.get('form a[href="/privacy"]')
+
+      expect(link.text()).toBe('privacy notice')
+      expect(link.element.parentElement!.textContent).toBe(
+        'We use your details only to reply to you. Read our privacy notice.',
+      )
+    })
+
+    it.each(['es', 'ti', 'am'] as const)('is translated into %s', async (code) => {
+      const wrapper = mountForm()
+
+      useLanguage().setLanguage(code)
+      await nextTick()
+
+      const { privacyNote, privacyNoteLink } = siteContent[code].contact
+      const link = wrapper.get('form a[href="/privacy"]')
+      expect(link.text()).toBe(privacyNoteLink)
+      expect(link.element.parentElement!.textContent).toBe(
+        privacyNote.replace('{link}', privacyNoteLink),
+      )
     })
   })
 })

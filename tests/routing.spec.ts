@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import { en } from '@/content/locales/en'
-import { htmlFiles, isPageId, menuPages, notFoundPage, type PageId } from '@/pages'
+import { allPages, footerPages, htmlFiles, isPageId, notFoundPage, privacyPage } from '@/pages'
 import { pageTitle } from '@/utils/pageTitle'
 
 import viteConfig from '../vite.config'
@@ -20,8 +20,6 @@ function read(file: string) {
 }
 
 const vercel = JSON.parse(read('vercel.json')) as Record<string, unknown>
-
-const allPages: { id: PageId; file: string }[] = [...menuPages, notFoundPage]
 
 describe('page addresses on Vercel', () => {
   it('serves each page at a clean address, such as /products', () => {
@@ -45,7 +43,7 @@ describe('page addresses on Vercel', () => {
 
 describe('page files', () => {
   it('gives every page an HTML file, and the address is the file name', () => {
-    for (const page of menuPages) {
+    for (const page of footerPages) {
       expect(existsSync(`${root}${page.file}`)).toBe(true)
       const expected = page.id === 'home' ? '/' : `/${page.file.replace(/\.html$/, '')}`
       expect(page.path).toBe(expected)
@@ -60,7 +58,14 @@ describe('page files', () => {
   it('builds every page file, and nothing else', () => {
     const input = viteConfig.build?.rolldownOptions?.input as Record<string, string>
 
-    expect(Object.keys(input).sort()).toEqual(['404', 'about', 'contact', 'index', 'products'])
+    expect(Object.keys(input).sort()).toEqual([
+      '404',
+      'about',
+      'contact',
+      'index',
+      'privacy',
+      'products',
+    ])
     for (const file of htmlFiles) {
       expect(Object.values(input).some((path) => path.endsWith(file))).toBe(true)
     }
@@ -83,7 +88,12 @@ describe('page files', () => {
     expect(read(file)).toContain(`<title>${pageTitle(id, en)}</title>`)
   })
 
-  it.each(menuPages)('$file has a description for search engines', ({ file }) => {
+  it('serves the privacy notice at /privacy, as a real page like the others', () => {
+    expect(privacyPage).toEqual({ id: 'privacy', path: '/privacy', file: 'privacy.html' })
+    expect(existsSync(`${root}privacy.html`)).toBe(true)
+  })
+
+  it.each(footerPages)('$file has a description for search engines', ({ file }) => {
     expect(read(file)).toMatch(/<meta\s+name="description"\s+content="[^"]+"/)
   })
 
@@ -101,5 +111,19 @@ describe('isPageId', () => {
 
   it.each([undefined, '', 'Home', 'blog', '404'])('refuses %j', (value) => {
     expect(isPageId(value)).toBe(false)
+  })
+})
+
+describe('favicon', () => {
+  // The founder's simplified mark, exactly as given.
+  const favicon =
+    '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 32 C30 18 38 8 55 6 C56 21 47 30 32 32 Z" fill="#3DBE82"/><rect x="8" y="34" width="48" height="24" rx="4" fill="#0B5D3B"/><path d="M8 46 H56 M32 34 V46 M20 46 V58 M44 46 V58" stroke="#FFFFFF" stroke-width="3"/></svg>'
+
+  it('is public/favicon.svg, exactly the simplified mark', () => {
+    expect(read('public/favicon.svg').trim()).toBe(favicon)
+  })
+
+  it.each(allPages)('$file links the favicon', ({ file }) => {
+    expect(read(file)).toContain('<link rel="icon" type="image/svg+xml" href="/favicon.svg" />')
   })
 })

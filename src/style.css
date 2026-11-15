@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* Brand colours, from the logo ("Leaf on a block"). */
+@theme {
+  --color-brand: #0b5d3b;
+  --color-brand-leaf: #3dbe82;
+  --color-brand-dark: #0a2e20;
+}
+
 @layer base {
   /* Smooth scrolling for the hero buttons' in-page links, except for users
      who have asked their device to reduce motion. */

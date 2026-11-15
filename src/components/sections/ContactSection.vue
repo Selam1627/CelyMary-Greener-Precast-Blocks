@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 
+import LinkedText from '@/components/ui/LinkedText.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { pathOf } from '@/pages'
 import {
   requiredFields,
   sendContactMessage,
@@ -245,6 +247,12 @@ withDefaults(
             >
           </p>
         </div>
+        <p class="text-sm text-stone-700">
+          <LinkedText
+            :text="contact.privacyNote"
+            :links="{ link: { text: contact.privacyNoteLink, href: pathOf('privacy') } }"
+          />
+        </p>
       </form>
     </div>
   </section>

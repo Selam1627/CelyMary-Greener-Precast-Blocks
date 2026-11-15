@@ -33,7 +33,7 @@ describe('TeamSection', () => {
       expect(card.get('h3').text()).toBe('Selam Berhe Beyene')
       expect(role!.text()).toBe('Founder')
       expect(bio!.text()).toBe(
-        'PhD researcher in cement-sector decarbonisation at Universidad de Cantabria, developing low-carbon building materials.',
+        'PhD researcher in cement-sector decarbonisation at the University of Cantabria, developing low-carbon building materials.',
       )
     })
 

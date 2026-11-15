@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue'
 
+import BrandLogo from '@/components/ui/BrandLogo.vue'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue'
 import { useDismiss } from '@/composables/useDismiss'
 import { useLanguage } from '@/composables/useLanguage'
 import { menuPages, type PageId } from '@/pages'
+import { companyNameInText } from '@/utils/companyName'
 
 defineProps<{
   /** Marked as the current page in the menu. */
@@ -43,11 +45,12 @@ const { onFocusOut } = useDismiss(
     <div class="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2 sm:gap-4">
       <a
         href="/"
-        class="mr-auto rounded-md py-2 leading-tight font-bold text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+        class="mr-auto flex items-center gap-2 rounded-md py-2 leading-tight font-bold text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
       >
+        <BrandLogo :label="navigation.logoLabel" class="size-9 shrink-0" />
         <!-- Phones get the short name; from the sm breakpoint, the full name. -->
         <span class="sm:hidden">{{ content.hero.companyShortName }}</span>
-        <span class="hidden sm:inline">{{ content.hero.companyName }}</span>
+        <span class="hidden sm:inline">{{ companyNameInText(content) }}</span>
       </a>
 
       <nav ref="nav" :aria-label="navigation.menuLabel" @focusout="onFocusOut" @keydown="onKeydown">

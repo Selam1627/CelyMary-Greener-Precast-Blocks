@@ -12,6 +12,50 @@ export interface NavigationContent {
   menuButton: string
   /** Each page's name in the menu, also used in the browser tab title. */
   pages: Record<MenuPageId, string>
+  /** Accessible name of the logo in the header. */
+  logoLabel: string
+}
+
+export interface FooterContent {
+  /** Screen-reader label of the footer links. */
+  label: string
+  /** Followed by the company email, as a link. */
+  emailLabel: string
+  /** Name of the privacy notice: footer link and browser tab title. */
+  privacyLink: string
+  /** The same in every language. */
+  copyright: string
+}
+
+export type PrivacySectionId =
+  | 'responsible'
+  | 'data'
+  | 'purpose'
+  | 'legal-basis'
+  | 'processors'
+  | 'retention'
+  | 'rights'
+  | 'complaint'
+  | 'language-choice'
+
+export interface PrivacySection {
+  /** Stable identifier, the same in every language. */
+  id: PrivacySectionId
+  heading: string
+  /** "{email}" becomes the company email and "{aepd}" the AEPD website, as links. */
+  paragraphs: readonly string[]
+}
+
+/**
+ * The privacy notice. It must describe only what the site really does:
+ * check the code (the contact form, src/server/, useLanguage) before changing it.
+ */
+export interface PrivacyContent {
+  heading: string
+  intro: string
+  /** Used instead of the email address when VITE_CONTACT_EMAIL is not set. */
+  emailFallback: string
+  sections: readonly PrivacySection[]
 }
 
 export interface NotFoundContent {
@@ -32,13 +76,18 @@ export interface HeroAction {
 }
 
 export interface HeroContent {
-  /** The brand name, in Latin letters on every page. Not translated. */
+  /**
+   * The brand name in Latin letters. Not translated. Shown in the hero title
+   * and the browser tab title on every page, and in the rest of the text on
+   * pages without a Ge'ez name.
+   */
   companyName: string
   /** Shown instead of the full name in the header on phones, where space is short. */
   companyShortName: string
   /**
-   * The brand name in Ge'ez script, shown under the Latin name. Only for
-   * languages written in Ge'ez (Tigrinya and Amharic).
+   * The brand name in Ge'ez script. Only for languages written in Ge'ez
+   * (Tigrinya and Amharic): shown under the Latin name in the hero title, and
+   * instead of it in the header and footer.
    */
   companyNameGeez?: string
   tagline: string
@@ -112,7 +161,7 @@ export interface RoadmapContent {
 }
 
 export interface TeamMember {
-  /** Not translated. */
+  /** Latin letters, or Ge'ez script on the Tigrinya and Amharic pages. */
   name: string
   role: string
   bio: string
@@ -163,6 +212,10 @@ export interface ContactContent {
   failureMessage: string
   /** Followed by the contact address, as a link. */
   directContactPrefix: string
+  /** Short line under the form. "{link}" becomes a link to the privacy notice. */
+  privacyNote: string
+  /** Text of the link in privacyNote. */
+  privacyNoteLink: string
   /**
    * Label of the hidden spam-trap field. Visitors never see it; it only tells
    * anyone who somehow reaches it to leave it empty.
@@ -174,6 +227,8 @@ export interface ContactContent {
 /** Every text on the site, in one language. */
 export interface SiteContent {
   navigation: NavigationContent
+  footer: FooterContent
+  privacy: PrivacyContent
   notFound: NotFoundContent
   languageSwitcher: LanguageSwitcherContent
   hero: HeroContent

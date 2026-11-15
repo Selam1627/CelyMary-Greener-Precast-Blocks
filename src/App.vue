@@ -5,10 +5,12 @@ import AudiencesSection from '@/components/sections/AudiencesSection.vue'
 import ContactSection from '@/components/sections/ContactSection.vue'
 import HeroSection from '@/components/sections/HeroSection.vue'
 import NotFoundSection from '@/components/sections/NotFoundSection.vue'
+import PrivacySection from '@/components/sections/PrivacySection.vue'
 import ProductsSection from '@/components/sections/ProductsSection.vue'
 import RoadmapSection from '@/components/sections/RoadmapSection.vue'
 import SolutionSection from '@/components/sections/SolutionSection.vue'
 import TeamSection from '@/components/sections/TeamSection.vue'
+import SiteFooter from '@/components/ui/SiteFooter.vue'
 import SiteHeader from '@/components/ui/SiteHeader.vue'
 import { useLanguage } from '@/composables/useLanguage'
 import type { PageId } from '@/pages'
@@ -57,6 +59,10 @@ watchEffect(() => {
 
     <ContactSection v-else-if="page === 'contact'" heading-level="h1" />
 
+    <PrivacySection v-else-if="page === 'privacy'" />
+
     <NotFoundSection v-else />
   </main>
+
+  <SiteFooter :current-page="page" />
 </template>
