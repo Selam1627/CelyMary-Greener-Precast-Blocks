@@ -236,7 +236,7 @@ export const es: SiteContent = {
         // REVIEW: Spanish job titles are gendered. "Fundador" / "Cofundador"
         // are placeholders; use "Fundadora" / "Cofundadora" where it applies.
         role: 'Fundador',
-        bio: 'Investigación doctoral sobre la descarbonización del sector del cemento en la Universidad de Cantabria, desarrollando materiales de construcción bajos en carbono.',
+        bio: 'Investigación doctoral sobre la descarbonización del sector del cemento en la Universidad de Cantabria.',
       },
       {
         name: 'Meron Gebreselassie Tadesse',

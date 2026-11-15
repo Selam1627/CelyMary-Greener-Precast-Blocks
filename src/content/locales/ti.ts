@@ -233,7 +233,7 @@ export const ti: SiteContent = {
         name: 'ሰላም በርሀ በየነ',
         role: 'መስራቲ',
         // REVIEW: written without a gendered verb form; adjust if needed.
-        bio: 'ኣብ ዩኒቨርሲቲ ካንታብሪያ ብዛዕባ ምንካይ ካርቦን ኣብ ዘርፊ ሲሚንቶ ናይ ፒኤችዲ ተመራማሪ፤ ኣብ ምምዕባል ትሑት ካርቦን ዘለዎም ኣቑሑት ህንፃ።',
+        bio: 'ኣብ ዩኒቨርሲቲ ካንታብሪያ ብዛዕባ ምንካይ ካርቦን ኣብ ዘርፊ ሲሚንቶ ናይ ፒኤችዲ ተመራማሪ።',
       },
       {
         name: 'ሜሮን ገብረስላሴ ታደሰ',

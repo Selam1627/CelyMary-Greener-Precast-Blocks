@@ -233,7 +233,7 @@ export const am: SiteContent = {
         name: 'ሰላም በርሀ በየነ',
         role: 'መሥራች',
         // REVIEW: written without a gendered verb form; adjust if needed.
-        bio: 'በካንታብሪያ ዩኒቨርሲቲ የሲሚንቶ ዘርፍን ካርቦን ልቀት በመቀነስ ላይ የፒኤችዲ ተመራማሪ፤ ዝቅተኛ ካርቦን ያላቸው የግንባታ ቁሳቁሶችን በማልማት ላይ።',
+        bio: 'በካንታብሪያ ዩኒቨርሲቲ የሲሚንቶ ዘርፍን ካርቦን ልቀት በመቀነስ ላይ የፒኤችዲ ተመራማሪ።',
       },
       {
         name: 'ሜሮን ገብረስላሴ ታደሰ',

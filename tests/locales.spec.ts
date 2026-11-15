@@ -236,3 +236,22 @@ describe("the university in the founder's bio", () => {
     },
   )
 })
+
+describe("the founder's bio", () => {
+  it("is the founder's English wording, exactly", () => {
+    expect(siteContent.en.team.members[0]!.bio).toBe(
+      'PhD researcher in cement-sector decarbonization at the University of Cantabria.',
+    )
+  })
+
+  it.each(languages.map((language) => language.code))(
+    'is one short sentence about the research, with nothing about developing materials (%s)',
+    (code) => {
+      const bio = siteContent[code].team.members[0]!.bio
+
+      expect(bio).toMatch(/[.።]$/u)
+      expect(bio.match(/[.።፤;,，]/gu)).toHaveLength(1)
+      expect(bio).not.toMatch(/developing|desarrollando|ምምዕባል|በማልማት/)
+    },
+  )
+})

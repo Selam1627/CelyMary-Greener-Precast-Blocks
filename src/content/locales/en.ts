@@ -231,7 +231,7 @@ export const en: SiteContent = {
       {
         name: 'Selam Berhe Beyene',
         role: 'Founder',
-        bio: 'PhD researcher in cement-sector decarbonisation at the University of Cantabria, developing low-carbon building materials.',
+        bio: 'PhD researcher in cement-sector decarbonization at the University of Cantabria.',
       },
       {
         name: 'Meron Gebreselassie Tadesse',
