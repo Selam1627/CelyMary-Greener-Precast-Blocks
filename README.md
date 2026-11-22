@@ -312,35 +312,40 @@ These rules shaped later work: products have no technical specs, the roadmap has
 
 ## Status and next steps
 
-**How far I got:** the MVP is live, with four follow-up releases. From the backlog, only US-09 (form backend) is built, released in v0.1.4. The company is still at the concept stage, and every product is in development.
+**How far I got:** the MVP is live, with five follow-up releases. After the MVP, I built US-09 (form backend, released in v0.1.4), and US-05 (languages), US-08 (separate pages) and US-10 (brand, footer and privacy notice), released together in v0.1.5. The company is still at the concept stage, and every product is in development.
 
 **Releases** (Git tags on `main`; v0.1.0 and v0.1.1 were tagged afterwards):
 
-| Version | Commit     | What changed                                                                              |
-| ------- | ---------- | ----------------------------------------------------------------------------------------- |
-| v0.1.0  | `58d858c`  | MVP                                                                                       |
-| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page                      |
-| v0.1.2  | `160fb66`  | README in the course's 5 sections                                                         |
-| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps                |
-| v0.1.4  | tag v0.1.4 | Form backend (US-09): the contact form sends messages from the website, with no email app |
+| Version | Commit     | What changed                                                                                                                                                         |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v0.1.0  | `58d858c`  | MVP                                                                                                                                                                  |
+| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page                                                                                                 |
+| v0.1.2  | `160fb66`  | README in the course's 5 sections                                                                                                                                    |
+| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps                                                                                           |
+| v0.1.4  | tag v0.1.4 | Form backend (US-09): the contact form sends messages from the website, with no email app                                                                            |
+| v0.1.5  | tag v0.1.5 | Four languages, English, Spanish, Tigrinya and Amharic, with reviewed translations (US-05); separate pages (US-08); logo, favicon, footer and privacy notice (US-10) |
 
 **What works:**
 
 - The live site has all the MVP sections, and unknown paths return a 404.
 - The form sends messages from the website itself. In local testing and on a Vercel preview, the message arrived in the company inbox.
 - When sending fails, the form shows a clear error message. I checked this locally with the API key missing.
-- All 207 tests in 13 files pass.
+- The site is in English, Spanish, Tigrinya and Amharic. I reviewed the Spanish, Tigrinya and Amharic translations myself.
+- On Vercel previews, the separate pages had their own addresses and an unknown address showed the 404 page. The logo, favicon, footer and privacy notice also showed correctly, and the form still sent messages.
+- All 598 tests in 23 files pass.
 
 **What doesn't work:**
 
 - A message can land in spam, as the first one did. Without its own domain, the form sends from Resend's test address, which makes this more likely.
+- The privacy notice is a draft: it still needs a legal review, in all four languages.
 - The site has no `robots.txt`.
 
-**The natural next step:** send a test message from the live site on a phone and on a laptop, to confirm the form works in production.
+**The natural next step:** release v0.1.5, then check the live site in all four languages on a phone and on a laptop, including sending a test message.
 
 After that:
 
-1. Once the company has its own domain, verify it in Resend so the form sends from the company's address.
-2. Add a `robots.txt`.
-3. Review the Vercel plan when the company starts operating, because the free Hobby plan is for non-commercial use.
-4. Work through the rest of the backlog, adding the calculator only once real figures exist.
+1. Have the privacy notice reviewed by a legal professional.
+2. Once the company has its own domain, verify it in Resend so the form sends from the company's address.
+3. Add a `robots.txt`.
+4. Review the Vercel plan when the company starts operating, because the free Hobby plan is for non-commercial use.
+5. Work through the rest of the backlog, adding the calculator only once real figures exist.
