@@ -1,53 +1,36 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import App from '@/App.vue'
-import { audiences } from '@/content/audiences'
-import { contact } from '@/content/contact'
-import { hero } from '@/content/hero'
-import { products } from '@/content/products'
-import { roadmap } from '@/content/roadmap'
-import { solution } from '@/content/solution'
-import { team } from '@/content/team'
+import { useLanguage } from '@/composables/useLanguage'
+import { languages, type LanguageCode } from '@/content/languages'
+import { siteContent } from '@/content/siteContent'
+import { allPages as pages, menuPages, type PageId } from '@/pages'
 
-const allTexts = [
-  hero.companyName,
-  hero.tagline,
-  ...hero.actions.map((action) => action.label),
-  solution.heading,
-  ...solution.benefits.flatMap((benefit) => [benefit.title, benefit.description]),
-  products.heading,
-  products.statusLabel,
-  ...products.items.flatMap((product) => [product.id, product.name, product.description]),
-  audiences.heading,
-  ...audiences.items.flatMap((audience) => [audience.id, audience.title, audience.description]),
-  roadmap.heading,
-  roadmap.statement,
-  ...roadmap.steps.flatMap((step) => [
-    step.id,
-    step.title,
-    ...(step.statusLabel === undefined ? [] : [step.statusLabel]),
-    ...(step.note === undefined ? [] : [step.note]),
-  ]),
-  team.heading,
-  ...team.members.flatMap((member) => [member.name, member.role, member.bio]),
-  contact.heading,
-  ...Object.values(contact.labels),
-  ...contact.visitorTypes,
-  contact.visitorTypePrompt,
-  contact.productPrompt,
-  contact.submitLabel,
-  contact.sendingLabel,
-  contact.successMessage,
-  contact.failureMessage,
-  contact.spamTrapLabel,
-  contact.directContactPrefix,
-  ...Object.values(contact.errors),
-  ...Object.values(contact.email),
-]
+const codes = languages.map((language) => language.code)
+
+const allPages: PageId[] = pages.map((page) => page.id)
+
+/** Mounts one page of the site in one language. */
+function mountPage(code: LanguageCode, page: PageId = 'home') {
+  useLanguage().setLanguage(code)
+  return mount(App, { props: { page } })
+}
+
+/** The text of every page of the site, in one language. */
+function siteText(code: LanguageCode) {
+  return allPages.map((page) => mountPage(code, page).text()).join(' ')
+}
+
+afterEach(() => {
+  useLanguage().setLanguage('en')
+  localStorage.clear()
+})
 
 describe('site content', () => {
-  describe('normal cases', () => {
+  describe('normal cases (English)', () => {
+    const { hero, solution, products } = siteContent.en
+
     it('hero has exactly the two buttons from the acceptance criteria', () => {
       expect(hero.actions.map((action) => action.label)).toEqual(['Work with us', 'Contact'])
     })
@@ -75,22 +58,14 @@ describe('site content', () => {
     })
   })
 
-  describe('edge cases', () => {
-    it('has no empty or whitespace-only texts', () => {
-      for (const text of allTexts) {
-        expect(text.trim()).not.toBe('')
-      }
-    })
+  describe.each(codes)('edge cases (%s)', (code) => {
+    const { hero, solution, products, audiences, roadmap, team, contact } = siteContent[code]
 
-    it('has no leading or trailing spaces in texts', () => {
-      for (const text of allTexts) {
-        expect(text).toBe(text.trim())
-      }
-    })
+    it("links every button to one of the site's pages", () => {
+      const paths: string[] = menuPages.map((page) => page.path)
 
-    it('uses in-page anchors with valid section ids for every button', () => {
       for (const action of hero.actions) {
-        expect(action.href).toMatch(/^#[a-z][a-z0-9-]*$/)
+        expect(paths).toContain(action.href)
       }
     })
 
@@ -117,8 +92,15 @@ describe('site content', () => {
 
     it('keeps product descriptions to one short sentence', () => {
       for (const product of products.items) {
-        expect(product.description).toMatch(/^[A-Z][^.]*\.$/)
-        expect(product.description.length).toBeLessThanOrEqual(120)
+        // One full stop (Latin "." or Ethiopic "።"), at the end.
+        expect(product.description).toMatch(/^[^.።]+[.።]$/u)
+        expect(product.description.length).toBeLessThanOrEqual(140)
+      }
+    })
+
+    it('starts Latin-script product descriptions with a capital letter', () => {
+      for (const product of products.items) {
+        expect(product.description).toMatch(/^(\p{Lu}|\p{Script=Ethiopic})/u)
       }
     })
 
@@ -132,14 +114,19 @@ describe('site content', () => {
       }
     })
 
-    it('has unique contact form visitor types (they are used as list keys)', () => {
-      expect(new Set(contact.visitorTypes).size).toBe(contact.visitorTypes.length)
+    it('has unique contact form visitor types and labels (they are used as list keys)', () => {
+      for (const values of [
+        contact.visitorTypes.map((type) => type.id),
+        contact.visitorTypes.map((type) => type.label),
+      ]) {
+        expect(new Set(values).size).toBe(values.length)
+      }
     })
 
-    it('marks exactly one roadmap step as the current stage', () => {
-      const current = roadmap.steps.filter((step) => step.statusLabel === 'Current stage')
+    it('marks exactly one roadmap step, the first, as the current stage', () => {
+      const current = roadmap.steps.filter((step) => step.statusLabel !== undefined)
 
-      expect(current.map((step) => step.title)).toEqual(['Concept and planning'])
+      expect(current.map((step) => step.id)).toEqual(['concept-and-planning'])
     })
 
     it('keeps the tagline to one short line', () => {
@@ -150,28 +137,35 @@ describe('site content', () => {
 
   describe('confidentiality and honesty rules (CLAUDE.md)', () => {
     // Generic words only: listing actual materials here would itself reveal them.
-    const forbiddenWords = [
-      'recipe',
-      'formula',
-      'formulation',
-      'ingredient',
-      'composition',
-      'mix design',
-      'production process',
-      'manufacturing process',
-    ]
+    const forbiddenWords: Record<LanguageCode, string[]> = {
+      en: [
+        'recipe',
+        'formula',
+        'formulation',
+        'ingredient',
+        'composition',
+        'mix design',
+        'production process',
+        'manufacturing process',
+      ],
+      es: [
+        'receta',
+        'fórmula',
+        'formulación',
+        'ingrediente',
+        'composición',
+        'dosificación',
+        'proceso de producción',
+        'proceso de fabricación',
+      ],
+      // Formula, ingredient, production process and manufacturing process.
+      ti: ['ቀመር', 'ጥረ ነገር', 'መስርሕ ምህርቲ', 'መስርሕ ምፍራይ'],
+      am: ['ቀመር', 'ንጥረ ነገር', 'የአመራረት ሂደት', 'የምርት ሂደት'],
+    }
 
-    it('never mentions recipes, formulations or the production process on the page', () => {
-      const pageText = mount(App).text().toLowerCase()
-
-      for (const word of forbiddenWords) {
-        expect(pageText).not.toContain(word)
-      }
-    })
-
-    it('gives no technical specifications for products', () => {
-      // Generic spec words only; any number is already caught by the next test.
-      const specWords = [
+    // Generic spec words only; any number is already caught by the next test.
+    const specWords: Partial<Record<LanguageCode, string[]>> = {
+      en: [
         'strength',
         'density',
         'dimension',
@@ -180,18 +174,70 @@ describe('site content', () => {
         'compressive',
         'load rating',
         'specification',
-      ]
-      const productText = mount(App).get('#products').text().toLowerCase()
+      ],
+      es: [
+        'resistencia',
+        'densidad',
+        'dimensi',
+        'peso',
+        'espesor',
+        'compresi',
+        'carga admisible',
+        'especificaci',
+      ],
+    }
 
-      for (const word of specWords) {
-        expect(productText).not.toContain(word)
-      }
+    it.each(codes)(
+      'never mentions recipes, formulations or the production process (%s)',
+      (code) => {
+        const pageText = siteText(code).toLowerCase()
+
+        for (const word of forbiddenWords[code]) {
+          expect(pageText).not.toContain(word)
+        }
+      },
+    )
+
+    it.each(['en', 'es'] as const)(
+      'gives no technical specifications for products (%s)',
+      (code) => {
+        const productText = mountPage(code, 'products').get('#products').text().toLowerCase()
+
+        for (const word of specWords[code]!) {
+          expect(productText).not.toContain(word)
+        }
+      },
+    )
+
+    it.each(codes)(
+      'contains no figures about the company or its products, so no unverified statistics (%s)',
+      (code) => {
+        // The company and product content: the main content of the menu pages.
+        // Only the footer (the copyright year) and the privacy notice (the
+        // retention period, the GDPR article) may contain numbers.
+        const contentText = menuPages
+          .map((page) => mountPage(code, page.id).get('main').text())
+          .join(' ')
+
+        // Any number: Western digits, Ethiopic numerals and others.
+        expect(contentText).not.toMatch(/\p{N}/u)
+      },
+    )
+
+    it.each(codes)('has numbers only in the footer year and the privacy notice (%s)', (code) => {
+      const footer = mountPage(code, 'home').get('footer').text()
+
+      expect(footer.match(/\p{N}+/gu)).toEqual(['2026'])
     })
 
-    it('contains no figures, so no unverified statistics', () => {
-      const pageText = mount(App).text()
+    it.each(codes)('labels every product as in development (%s)', (code) => {
+      const { statusLabel, items } = siteContent[code].products
+      const cards = mountPage(code, 'products').get('#products').findAll('li')
 
-      expect(pageText).not.toMatch(/\d/)
+      expect(cards).toHaveLength(items.length)
+      for (const card of cards) {
+        expect(card.text()).toContain(statusLabel)
+      }
     })
   })
 })

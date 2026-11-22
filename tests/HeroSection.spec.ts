@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import HeroSection from '@/components/sections/HeroSection.vue'
-import { hero, type HeroContent } from '@/content/hero'
+import { en } from '@/content/locales/en'
+import type { HeroContent } from '@/content/types'
 
-/** Mounts HeroSection with a replacement for src/content/hero.ts. */
+const { hero } = en
+
+/** Mounts HeroSection with replacement English texts for this section. */
 async function mountWithContent(content: HeroContent) {
   vi.resetModules()
-  vi.doMock('@/content/hero', () => ({ hero: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, hero: content } }))
   const { default: Component } = await import('@/components/sections/HeroSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/hero')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 
@@ -31,7 +34,7 @@ describe('HeroSection', () => {
       expect(wrapper.text()).toContain(hero.tagline)
     })
 
-    it('has "Work with us" and "Contact" buttons that link to their sections', () => {
+    it('has "Work with us" and "Contact" buttons that open their pages', () => {
       const wrapper = mount(HeroSection)
 
       const buttons = wrapper.findAll('a').map((link) => ({
@@ -40,8 +43,8 @@ describe('HeroSection', () => {
       }))
 
       expect(buttons).toEqual([
-        { label: 'Work with us', href: '#work-with-us' },
-        { label: 'Contact', href: '#contact' },
+        { label: 'Work with us', href: '/about' },
+        { label: 'Contact', href: '/contact' },
       ])
     })
   })
@@ -81,13 +84,31 @@ describe('HeroSection', () => {
     it('renders the text from the content file, not hard-coded text', async () => {
       const wrapper = await mountWithContent({
         companyName: 'Test Company',
+        companyShortName: 'Test',
         tagline: 'Test tagline.',
-        actions: [{ label: 'Test action', href: '#test' }],
+        actions: [{ label: 'Test action', href: '/products' }],
       })
 
       expect(wrapper.get('h1').text()).toBe('Test Company')
       expect(wrapper.text()).toContain('Test tagline.')
-      expect(wrapper.get('a').attributes('href')).toBe('#test')
+      expect(wrapper.get('a').attributes('href')).toBe('/products')
+    })
+
+    it("shows no Ge'ez line in English", () => {
+      const wrapper = mount(HeroSection)
+
+      expect(wrapper.get('h1').text()).toBe('CelyMary Greener Precast Blocks')
+      expect(wrapper.get('h1').find('span').exists()).toBe(false)
+    })
+
+    it("shows the Ge'ez name as a second line of the main heading, when there is one", async () => {
+      const wrapper = await mountWithContent({ ...hero, companyNameGeez: 'ሰሊሜሪ ሓምለዋይ ብሎኬት' })
+      const h1 = wrapper.get('h1')
+
+      expect(h1.text()).toContain('CelyMary Greener Precast Blocks')
+      expect(h1.get('span').text()).toBe('ሰሊሜሪ ሓምለዋይ ብሎኬት')
+      expect(h1.get('span').classes()).toContain('block')
+      expect(wrapper.findAll('h1')).toHaveLength(1)
     })
 
     it('renders no buttons when the content file lists no actions', async () => {
@@ -100,7 +121,7 @@ describe('HeroSection', () => {
     it('styles every action after the first as secondary', async () => {
       const wrapper = await mountWithContent({
         ...hero,
-        actions: [...hero.actions, { label: 'Third', href: '#third' }],
+        actions: [...hero.actions, { label: 'Third', href: '/products' }],
       })
       const third = wrapper.findAll('a')[2]!
 

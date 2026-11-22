@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProductIconName } from '@/content/products'
+import type { ProductIconName } from '@/content/types'
 
 defineProps<{
   name: ProductIconName

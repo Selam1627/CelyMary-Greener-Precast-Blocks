@@ -2,7 +2,7 @@
 
 ## What it is
 
-CelyMary Greener Precast Blocks is an early-stage company planning lower-carbon building blocks, and this one-page website shows what it wants to make and how to contact it.
+CelyMary Greener Precast Blocks is an early-stage company planning lower-carbon building blocks, and this small website shows what it wants to make and how to contact it.
 
 **The problem:** the people who might work with the company have no single place to learn what it offers or how to reach it.
 
@@ -28,25 +28,31 @@ Each MVP story answers a question a visitor needs answered: what is this, what w
 | Story | What it covers                                                                       |
 | ----- | ------------------------------------------------------------------------------------ |
 | US-09 | Form backend: the contact form sends the message from the website, with no email app |
+| US-05 | Languages: English, Spanish, Tigrinya (ትግርኛ) and Amharic (አማርኛ)                      |
+| US-08 | Separate pages: Home, Products, About us and Contact, with a menu                    |
+| US-10 | Brand, footer and privacy notice: logo, favicon, footer and a /privacy page          |
 
 ### What the live site has
 
-- **Hero:** the company name, tagline and buttons that lead to "Work with us" and "Contact".
+- **Brand:** the company logo ("Leaf on a block") next to the name in the header, and as the browser tab icon.
+- **Footer:** on every page, with the logo, the page links, the company email, a link to the privacy notice and the copyright line.
+- **Privacy notice:** at `/privacy`, in plain words, describing what the contact form collects and who processes it. A line under the contact form links to it.
+- **Pages:** Home, Products, About us and Contact, each with its own address, and a menu on every page that collapses into a menu button on phones.
+- **Hero:** the company name, tagline and buttons that open the About us and Contact pages.
 - **Our solution:** the three benefits.
 - **Products:** five planned product types with icons, all marked "In development".
 - **Work with us:** what the company offers customers, investors and partners.
 - **Roadmap:** the current concept stage and the next steps, without invented dates.
 - **Team:** the founder and co-founder.
 - **Contact:** a validated form that sends the message from the website, with clear success and error messages and basic spam protection, plus a direct email link.
+- **Languages:** a language switcher at the top of the page offers English, Español, ትግርኛ and አማርኛ. The site remembers the visitor's choice.
 
 ### Backlog
 
 | Story | What it covers                                    |
 | ----- | ------------------------------------------------- |
-| US-05 | Spanish version                                   |
 | US-06 | News and milestones                               |
 | US-07 | Carbon savings calculator, only with real figures |
-| US-08 | Separate pages                                    |
 
 ## How to run it
 
@@ -84,6 +90,42 @@ The form posts to `/api/contact`, a Vercel function ([api/contact.ts](api/contac
 - **Spam protection:** a hidden field that people never see but many bots fill in, and a minimum time to fill in the form. Messages caught by either are dropped without telling the sender. The server also re-checks every field and limits the request size.
 - **Local testing:** `npm run dev` answers `/api/contact` with the same code, reading the variables from `.env`, so you don't need the Vercel CLI. With a real `RESEND_API_KEY` in `.env`, the form sends real emails. `npm run preview` serves only the static site, so the form can't send from there.
 - **Errors:** the server logs why a message couldn't be sent (a missing variable, or Resend's reason), never the API key. On Vercel, these appear in the project's function logs.
+
+### Pages and addresses
+
+| Address       | Page           | What it shows                     |
+| ------------- | -------------- | --------------------------------- |
+| `/`           | Home           | Hero and "Our solution"           |
+| `/products`   | Products       | The planned products              |
+| `/about`      | About us       | Work with us, roadmap and team    |
+| `/contact`    | Contact        | The contact form                  |
+| `/privacy`    | Privacy notice | How the site handles visitor data |
+| anything else | Page not found | A 404 status and a link to Home   |
+
+- **How it works:** each page is a real HTML file at the project root (`index.html`, `products.html`, `about.html`, `contact.html`, `404.html`), listed in [src/pages.ts](src/pages.ts). Vite builds them all, and they share one script. The `data-page` attribute in each file tells the script which sections to show.
+- **On Vercel:** `cleanUrls` serves `products.html` at `/products` and redirects `/products.html` there. `trailingSlash: false` redirects `/products/` to `/products`. There are no rewrites, so an unknown address gets a real 404 status, and Vercel shows `404.html`. Don't add a catch-all rewrite: that was the routing bug fixed in v0.1.1.
+- **Locally:** `npm run dev` and `npm run preview` serve the same addresses, and answer unknown addresses with the 404 page and a 404 status.
+- **Menu:** every page has the menu and the language switcher. On phones the menu collapses into a menu button. A "Skip to main content" link appears first when using the keyboard.
+- **Titles:** each page has its own browser tab title. The HTML file has the English title, and the page switches it to the visitor's language once it loads.
+
+### Privacy notice
+
+The privacy notice at `/privacy` describes only what the code does. Its texts are in the `privacy` part of each file in [src/content/locales/](src/content/locales/).
+
+- **What the contact form collects:** name, email, visitor type, product (optional), message and the visitor's language. The two spam checks are not stored or emailed.
+- **Who processes it:** Vercel (hosting and the `/api/contact` function), Resend (email delivery) and the company's Gmail inbox. The site has no database, cookies, analytics or third-party scripts. The only browser storage is the language choice.
+- **Keep it true:** any change that affects visitor data (a new form field, a new service, logging, cookies or analytics) must update the notice in all four languages.
+- **Status:** the whole notice, English included, is a draft for legal review.
+
+### Languages
+
+The site is available in English (the default), Spanish, Tigrinya and Amharic.
+
+- **Where the texts are:** one file per language in [src/content/locales/](src/content/locales/): `en.ts`, `es.ts`, `ti.ts` and `am.ts`. English is the reference. A change to any text goes into all four files, and a test fails if a language is missing a text.
+- **Review:** the Spanish, Tigrinya and Amharic texts have been reviewed by the founder. A new or changed translation that hasn't been reviewed yet is a draft: it gets a `DRAFT – awaiting review` note at the top of its file and `draft: true` in [src/content/languages.ts](src/content/languages.ts). The privacy notice stays a draft for legal review in every language.
+- **The visitor's choice:** it is saved in the browser (`localStorage`), and the page's `lang` attribute changes with it. If the browser blocks storage, the site still switches language for that visit.
+- **Ethiopic script:** Tigrinya and Amharic use Noto Sans Ethiopic, from the `@fontsource-variable/noto-sans-ethiopic` package. The font is served with the site, so no third-party font service is involved.
+- **Contact form:** the form sends the visitor type and product as ids, plus the visitor's language. The email you receive is always in English and has a `Language:` line, for example `Language: Spanish (Español)`. The visitor's message arrives exactly as they wrote it.
 
 ### Start with Docker
 
@@ -157,16 +199,19 @@ docker compose run --rm app npm run test
 ├── api/
 │   └── contact.ts             # Vercel function: sends the contact form
 ├── docs/                      # Project documentation
-├── public/                    # Static files copied as-is (favicon, images)
+├── public/                    # Static files copied as-is (favicon.svg)
 ├── src/
 │   ├── assets/                # Images processed by Vite
 │   ├── components/
 │   │   ├── sections/          # One component per page section
-│   │   └── ui/                # Small reusable pieces (buttons, cards…)
-│   ├── content/               # Site text and data (products, roadmap, team)
+│   │   └── ui/                # Header and menu, language switcher, icons
+│   ├── composables/           # Shared state (the current language)
+│   ├── content/               # Site text and data, by language
+│   │   └── locales/           # One file per language: en, es, ti, am
 │   ├── server/                # Server-only code (contact form handler)
 │   ├── utils/                 # Plain TypeScript helpers (contact form rules)
-│   ├── App.vue                # Page layout: puts the sections in order
+│   ├── App.vue                # Page layout: header, then the page's sections
+│   ├── pages.ts               # The pages and their addresses
 │   ├── env.d.ts               # Types for environment variables
 │   ├── main.ts                # App entry point
 │   └── style.css              # Tailwind entry point
@@ -174,7 +219,7 @@ docker compose run --rm app npm run test
 ├── .env.example               # Environment variables (no real values)
 ├── docker-compose.yml         # Dev container service "app"
 ├── Dockerfile                 # Dev image (Node.js 24)
-├── index.html
+├── index.html                 # Home page (also products, about, contact, 404)
 ├── vercel.json                # Vercel build settings
 ├── vite.config.ts
 ├── vitest.config.ts
@@ -187,7 +232,7 @@ docker compose run --rm app npm run test
 
 ### Deployment
 
-Vercel builds the site with `npm run build` and serves the static files from `dist/`. The site has one page and no router, so unknown paths return a 404. Vercel also turns each file in `api/` into a serverless function, so `/api/contact` is the only server route.
+Vercel builds the site with `npm run build` and serves the static files from `dist/`. Each page is its own HTML file, served at a clean address such as `/products`. There is no router and no rewrite, so unknown addresses return a real 404 with the site's 404 page (see [Pages and addresses](#pages-and-addresses)). Vercel also turns each file in `api/` into a serverless function, so `/api/contact` is the only server route.
 
 Set `VITE_CONTACT_EMAIL`, `RESEND_API_KEY` and `CONTACT_FROM_EMAIL` in the Vercel project settings (**Settings → Environment Variables**) for Production and Preview. Redeploy after changing them.
 
@@ -267,35 +312,40 @@ These rules shaped later work: products have no technical specs, the roadmap has
 
 ## Status and next steps
 
-**How far I got:** the MVP is live, with four follow-up releases. From the backlog, only US-09 (form backend) is built, released in v0.1.4. The company is still at the concept stage, and every product is in development.
+**How far I got:** the MVP is live, with five follow-up releases. After the MVP, I built US-09 (form backend, released in v0.1.4), and US-05 (languages), US-08 (separate pages) and US-10 (brand, footer and privacy notice), released together in v0.1.5. The company is still at the concept stage, and every product is in development.
 
 **Releases** (Git tags on `main`; v0.1.0 and v0.1.1 were tagged afterwards):
 
-| Version | Commit     | What changed                                                                              |
-| ------- | ---------- | ----------------------------------------------------------------------------------------- |
-| v0.1.0  | `58d858c`  | MVP                                                                                       |
-| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page                      |
-| v0.1.2  | `160fb66`  | README in the course's 5 sections                                                         |
-| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps                |
-| v0.1.4  | tag v0.1.4 | Form backend (US-09): the contact form sends messages from the website, with no email app |
+| Version | Commit     | What changed                                                                                                                                                         |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v0.1.0  | `58d858c`  | MVP                                                                                                                                                                  |
+| v0.1.1  | `55ae23b`  | Routing fix: unknown paths now return a 404 instead of the home page                                                                                                 |
+| v0.1.2  | `160fb66`  | README in the course's 5 sections                                                                                                                                    |
+| v0.1.3  | tag v0.1.3 | Releases update: this table, the `package.json` version and the next steps                                                                                           |
+| v0.1.4  | tag v0.1.4 | Form backend (US-09): the contact form sends messages from the website, with no email app                                                                            |
+| v0.1.5  | tag v0.1.5 | Four languages, English, Spanish, Tigrinya and Amharic, with reviewed translations (US-05); separate pages (US-08); logo, favicon, footer and privacy notice (US-10) |
 
 **What works:**
 
 - The live site has all the MVP sections, and unknown paths return a 404.
 - The form sends messages from the website itself. In local testing and on a Vercel preview, the message arrived in the company inbox.
 - When sending fails, the form shows a clear error message. I checked this locally with the API key missing.
-- All 207 tests in 13 files pass.
+- The site is in English, Spanish, Tigrinya and Amharic. I reviewed the Spanish, Tigrinya and Amharic translations myself.
+- On Vercel previews, the separate pages had their own addresses and an unknown address showed the 404 page. The logo, favicon, footer and privacy notice also showed correctly, and the form still sent messages.
+- All 598 tests in 23 files pass.
 
 **What doesn't work:**
 
 - A message can land in spam, as the first one did. Without its own domain, the form sends from Resend's test address, which makes this more likely.
-- The site has no favicon or `robots.txt`.
+- The privacy notice is a draft: it still needs a legal review, in all four languages.
+- The site has no `robots.txt`.
 
-**The natural next step:** send a test message from the live site on a phone and on a laptop, to confirm the form works in production.
+**The natural next step:** release v0.1.5, then check the live site in all four languages on a phone and on a laptop, including sending a test message.
 
 After that:
 
-1. Once the company has its own domain, verify it in Resend so the form sends from the company's address.
-2. Add a favicon and `robots.txt`.
-3. Review the Vercel plan when the company starts operating, because the free Hobby plan is for non-commercial use.
-4. Work through the rest of the backlog, adding the calculator only once real figures exist.
+1. Have the privacy notice reviewed by a legal professional.
+2. Once the company has its own domain, verify it in Resend so the form sends from the company's address.
+3. Add a `robots.txt`.
+4. Review the Vercel plan when the company starts operating, because the free Hobby plan is for non-commercial use.
+5. Work through the rest of the backlog, adding the calculator only once real figures exist.

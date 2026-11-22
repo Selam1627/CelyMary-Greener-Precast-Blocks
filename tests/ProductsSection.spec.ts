@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import ProductsSection from '@/components/sections/ProductsSection.vue'
-import { products, type ProductsContent } from '@/content/products'
+import { en } from '@/content/locales/en'
+import type { ProductsContent } from '@/content/types'
 
-/** Mounts ProductsSection with a replacement for src/content/products.ts. */
+const { products } = en
+
+/** Mounts ProductsSection with replacement English texts for this section. */
 async function mountWithContent(content: ProductsContent) {
   vi.resetModules()
-  vi.doMock('@/content/products', () => ({ products: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, products: content } }))
   const { default: Component } = await import('@/components/sections/ProductsSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/products')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 
@@ -107,7 +110,9 @@ describe('ProductsSection', () => {
       const wrapper = await mountWithContent({
         heading: 'Test heading',
         statusLabel: 'Test status',
-        items: [{ id: 'test', name: 'Test block', description: 'Test use.', icon: 'paving' }],
+        items: [
+          { id: 'paving-blocks', name: 'Test block', description: 'Test use.', icon: 'paving' },
+        ],
       })
 
       expect(wrapper.get('h2').text()).toBe('Test heading')
@@ -121,6 +126,24 @@ describe('ProductsSection', () => {
 
       expect(wrapper.findAll('li')).toHaveLength(0)
       expect(wrapper.get('h2').text()).toBe('Our planned products')
+    })
+  })
+
+  describe('heading level', () => {
+    it('uses a section heading by default', () => {
+      const wrapper = mount(ProductsSection)
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.get('h2').text()).toBe('Our planned products')
+    })
+
+    it('can be the main heading, when the section opens its page', () => {
+      const wrapper = mount(ProductsSection, { props: { headingLevel: 'h1' } })
+      const heading = wrapper.get('h1')
+
+      expect(heading.text()).toBe('Our planned products')
+      expect(wrapper.find('h2').exists()).toBe(false)
+      expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
     })
   })
 })

@@ -1,6 +1,6 @@
 {
   "name": "cely-precast-blocks",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "engines": {
@@ -19,6 +19,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans-ethiopic": "^5.3.0",
     "vue": "^3.5.45"
   },
   "devDependencies": {

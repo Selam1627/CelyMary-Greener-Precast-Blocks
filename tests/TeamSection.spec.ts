@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import TeamSection from '@/components/sections/TeamSection.vue'
-import { team, type TeamContent } from '@/content/team'
+import { en } from '@/content/locales/en'
+import type { TeamContent } from '@/content/types'
 
-/** Mounts TeamSection with a replacement for src/content/team.ts. */
+const { team } = en
+
+/** Mounts TeamSection with replacement English texts for this section. */
 async function mountWithContent(content: TeamContent) {
   vi.resetModules()
-  vi.doMock('@/content/team', () => ({ team: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, team: content } }))
   const { default: Component } = await import('@/components/sections/TeamSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/team')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 
@@ -30,7 +33,7 @@ describe('TeamSection', () => {
       expect(card.get('h3').text()).toBe('Selam Berhe Beyene')
       expect(role!.text()).toBe('Founder')
       expect(bio!.text()).toBe(
-        'PhD researcher in cement-sector decarbonisation at Universidad de Cantabria, developing low-carbon building materials.',
+        'PhD researcher in cement-sector decarbonization at the University of Cantabria.',
       )
     })
 

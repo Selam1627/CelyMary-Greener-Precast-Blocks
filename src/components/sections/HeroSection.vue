@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { hero } from '@/content/hero'
+import { computed } from 'vue'
+
+import { useLanguage } from '@/composables/useLanguage'
+
+const { content } = useLanguage()
+const hero = computed(() => content.value.hero)
 </script>
 
 <template>
@@ -7,6 +12,12 @@ import { hero } from '@/content/hero'
     <div class="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
       <h1 class="text-4xl font-bold tracking-tight text-emerald-900 sm:text-6xl">
         {{ hero.companyName }}
+        <span
+          v-if="hero.companyNameGeez"
+          class="mt-3 block text-2xl font-semibold tracking-normal sm:text-4xl"
+        >
+          {{ hero.companyNameGeez }}
+        </span>
       </h1>
       <p class="text-lg text-stone-700 sm:text-xl">
         {{ hero.tagline }}

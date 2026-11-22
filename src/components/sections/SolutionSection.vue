@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { solution } from '@/content/solution'
+import { computed } from 'vue'
+
+import { useLanguage } from '@/composables/useLanguage'
+
+const { content } = useLanguage()
+const solution = computed(() => content.value.solution)
 </script>
 
 <template>

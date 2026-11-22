@@ -2,18 +2,21 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import AudiencesSection from '@/components/sections/AudiencesSection.vue'
-import { audiences, type AudiencesContent } from '@/content/audiences'
+import { en } from '@/content/locales/en'
+import type { AudiencesContent } from '@/content/types'
 
-/** Mounts AudiencesSection with a replacement for src/content/audiences.ts. */
+const { audiences } = en
+
+/** Mounts AudiencesSection with replacement English texts for this section. */
 async function mountWithContent(content: AudiencesContent) {
   vi.resetModules()
-  vi.doMock('@/content/audiences', () => ({ audiences: content }))
+  vi.doMock('@/content/locales/en', () => ({ en: { ...en, audiences: content } }))
   const { default: Component } = await import('@/components/sections/AudiencesSection.vue')
   return mount(Component)
 }
 
 afterEach(() => {
-  vi.doUnmock('@/content/audiences')
+  vi.doUnmock('@/content/locales/en')
   vi.resetModules()
 })
 
@@ -91,6 +94,24 @@ describe('AudiencesSection', () => {
 
       expect(wrapper.findAll('li')).toHaveLength(0)
       expect(wrapper.get('h2').text()).toBe('Work with us')
+    })
+  })
+
+  describe('heading level', () => {
+    it('uses a section heading by default', () => {
+      const wrapper = mount(AudiencesSection)
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.get('h2').text()).toBe('Work with us')
+    })
+
+    it('can be the main heading, when the section opens its page', () => {
+      const wrapper = mount(AudiencesSection, { props: { headingLevel: 'h1' } })
+      const heading = wrapper.get('h1')
+
+      expect(heading.text()).toBe('Work with us')
+      expect(wrapper.find('h2').exists()).toBe(false)
+      expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
     })
   })
 })

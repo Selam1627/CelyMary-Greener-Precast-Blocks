@@ -1,10 +1,14 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ContactSection from '@/components/sections/ContactSection.vue'
-import { contact } from '@/content/contact'
-import { products } from '@/content/products'
+import { useLanguage } from '@/composables/useLanguage'
+import { en } from '@/content/locales/en'
+import { siteContent } from '@/content/siteContent'
 import { sendContactMessage } from '@/utils/contactForm'
+
+const { contact, products } = en
 
 // Keep the real validation; only the request to the server is faked.
 vi.mock('@/utils/contactForm', async (importOriginal) => ({
@@ -27,7 +31,7 @@ type Wrapper = ReturnType<typeof mountForm>
 async function fillInRequiredFields(wrapper: Wrapper) {
   await wrapper.get('#contact-name').setValue('Test Visitor')
   await wrapper.get('#contact-email').setValue('visitor@example.com')
-  await wrapper.get('#contact-visitor-type').setValue('Architect')
+  await wrapper.get('#contact-visitor-type').setValue('architect')
   await wrapper.get('#contact-message').setValue('Test message.')
 }
 
@@ -58,6 +62,8 @@ afterEach(() => {
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
   document.body.innerHTML = ''
+  useLanguage().setLanguage('en')
+  localStorage.clear()
 })
 
 describe('ContactSection', () => {
@@ -100,6 +106,21 @@ describe('ContactSection', () => {
       ])
     })
 
+    it('sends the visitor type and product as ids, the same in every language', () => {
+      const wrapper = mountForm()
+
+      expect(
+        optionsOf(wrapper, '#contact-visitor-type')
+          .slice(1)
+          .map((option) => option.attributes('value')),
+      ).toEqual(contact.visitorTypes.map((type) => type.id))
+      expect(
+        optionsOf(wrapper, '#contact-product')
+          .slice(1)
+          .map((option) => option.attributes('value')),
+      ).toEqual(products.items.map((product) => product.id))
+    })
+
     it('offers the five products, plus the choice of none', () => {
       const wrapper = mountForm()
       const [none, ...choices] = optionsOf(wrapper, '#contact-product')
@@ -114,7 +135,7 @@ describe('ContactSection', () => {
     it('sends what the visitor wrote to the server once, with an empty spam trap', async () => {
       const wrapper = mountForm()
       await fillInRequiredFields(wrapper)
-      await wrapper.get('#contact-product').setValue('Paving blocks')
+      await wrapper.get('#contact-product').setValue('paving-blocks')
 
       await submit(wrapper)
 
@@ -123,11 +144,12 @@ describe('ContactSection', () => {
         {
           name: 'Test Visitor',
           email: 'visitor@example.com',
-          visitorType: 'Architect',
-          product: 'Paving blocks',
+          visitorType: 'architect',
+          product: 'paving-blocks',
           message: 'Test message.',
         },
         { website: '', elapsedMs: expect.any(Number) },
+        'en',
       )
     })
 
@@ -157,7 +179,7 @@ describe('ContactSection', () => {
 
     it('shows the address as a direct email link', () => {
       const wrapper = mountForm()
-      const link = wrapper.get('form a')
+      const link = wrapper.get('form a[href^="mailto:"]')
 
       expect(link.attributes('href')).toBe(`mailto:${testAddress}`)
       expect(link.text()).toBe(testAddress)
@@ -221,7 +243,9 @@ describe('ContactSection', () => {
 
       await submit(wrapper)
 
-      expect(wrapper.get('form a').attributes('href')).toBe(`mailto:${testAddress}`)
+      expect(wrapper.get('form a[href^="mailto:"]').attributes('href')).toBe(
+        `mailto:${testAddress}`,
+      )
     })
 
     it('can try again after a failure, and then succeed', async () => {
@@ -244,7 +268,7 @@ describe('ContactSection', () => {
       vi.stubEnv('VITE_CONTACT_EMAIL', address as string)
       const wrapper = mountForm()
 
-      expect(wrapper.find('form a').exists()).toBe(false)
+      expect(wrapper.find('form a[href^="mailto:"]').exists()).toBe(false)
       expect(wrapper.text()).not.toContain('Or write to us directly at')
     })
   })
@@ -443,6 +467,144 @@ describe('ContactSection', () => {
 
       expect(prompt!.text()).toBe('Select one')
       expect(prompt!.attributes('disabled')).toBeDefined()
+    })
+  })
+
+  describe('in other languages', () => {
+    it('shows the labels, choices and button in the chosen language', async () => {
+      const wrapper = mountForm()
+      const { contact: es, products: esProducts } = siteContent.es
+
+      useLanguage().setLanguage('es')
+      await nextTick()
+
+      expect(wrapper.get('#contact-heading').text()).toBe(es.heading)
+      expect(wrapper.get('label[for="contact-name"]').text()).toBe(es.labels.name)
+      expect(
+        optionsOf(wrapper, '#contact-visitor-type')
+          .slice(1)
+          .map((option) => option.text()),
+      ).toEqual(es.visitorTypes.map((type) => type.label))
+      expect(
+        optionsOf(wrapper, '#contact-product')
+          .slice(1)
+          .map((option) => option.text()),
+      ).toEqual(esProducts.items.map((product) => product.name))
+      expect(wrapper.get('form button').text()).toBe(es.submitLabel)
+      expect(wrapper.text()).toContain(`${es.directContactPrefix} ${testAddress}`)
+    })
+
+    it.each(['es', 'ti', 'am'] as const)(
+      'shows the errors in %s, and sends the same ids plus the language',
+      async (code) => {
+        useLanguage().setLanguage(code)
+        const wrapper = mountForm()
+        const { errors } = siteContent[code].contact
+
+        await submit(wrapper)
+        expect(wrapper.findAll('[role="alert"]').map((error) => error.text())).toEqual([
+          errors.nameRequired,
+          errors.emailRequired,
+          errors.visitorTypeRequired,
+          errors.messageRequired,
+        ])
+
+        await fillInRequiredFields(wrapper)
+        await wrapper.get('#contact-product').setValue('paving-blocks')
+        await submit(wrapper)
+
+        expect(sendContactMessage).toHaveBeenCalledWith(
+          expect.objectContaining({ visitorType: 'architect', product: 'paving-blocks' }),
+          expect.any(Object),
+          code,
+        )
+      },
+    )
+
+    it.each(['es', 'ti', 'am'] as const)(
+      'shows the success and failure messages in %s',
+      async (code) => {
+        useLanguage().setLanguage(code)
+        const { contact: texts } = siteContent[code]
+        vi.mocked(sendContactMessage).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+        const wrapper = mountForm()
+        await fillInRequiredFields(wrapper)
+
+        await submit(wrapper)
+        expect(statusText(wrapper)).toBe(texts.failureMessage)
+
+        await submit(wrapper)
+        expect(statusText(wrapper)).toBe(texts.successMessage)
+      },
+    )
+
+    it('translates an error that is already showing when the language changes', async () => {
+      const wrapper = mountForm()
+      await submit(wrapper)
+      expect(wrapper.get('#contact-name-error').text()).toBe(contact.errors.nameRequired)
+
+      useLanguage().setLanguage('am')
+      await nextTick()
+
+      expect(wrapper.get('#contact-name-error').text()).toBe(
+        siteContent.am.contact.errors.nameRequired,
+      )
+    })
+
+    it('keeps what the visitor typed when the language changes', async () => {
+      const wrapper = mountForm()
+      await fillInRequiredFields(wrapper)
+
+      useLanguage().setLanguage('ti')
+      await nextTick()
+
+      expect(valueOf(wrapper, '#contact-name')).toBe('Test Visitor')
+      expect(valueOf(wrapper, '#contact-visitor-type')).toBe('architect')
+      expect(valueOf(wrapper, '#contact-message')).toBe('Test message.')
+    })
+  })
+
+  describe('heading level', () => {
+    it('uses a section heading by default', () => {
+      const wrapper = mount(ContactSection)
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.get('h2').text()).toBe('Contact us')
+    })
+
+    it('can be the main heading, when the section opens its page', () => {
+      const wrapper = mount(ContactSection, { props: { headingLevel: 'h1' } })
+      const heading = wrapper.get('h1')
+
+      expect(heading.text()).toBe('Contact us')
+      expect(wrapper.find('h2').exists()).toBe(false)
+      expect(wrapper.get('section').attributes('aria-labelledby')).toBe(heading.attributes('id'))
+    })
+  })
+
+  describe('privacy notice link', () => {
+    it('shows a short line under the form that links to the privacy notice', () => {
+      const wrapper = mountForm()
+      const link = wrapper.get('form a[href="/privacy"]')
+
+      expect(link.text()).toBe('privacy notice')
+      expect(link.element.parentElement!.textContent).toBe(
+        'We use your details only to reply to you. Read our privacy notice.',
+      )
+    })
+
+    it.each(['es', 'ti', 'am'] as const)('is translated into %s', async (code) => {
+      const wrapper = mountForm()
+
+      useLanguage().setLanguage(code)
+      await nextTick()
+
+      const { privacyNote, privacyNoteLink } = siteContent[code].contact
+      const link = wrapper.get('form a[href="/privacy"]')
+      expect(link.text()).toBe(privacyNoteLink)
+      expect(link.element.parentElement!.textContent).toBe(
+        privacyNote.replace('{link}', privacyNoteLink),
+      )
     })
   })
 })
