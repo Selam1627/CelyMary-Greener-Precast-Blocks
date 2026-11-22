@@ -122,7 +122,7 @@ The privacy notice at `/privacy` describes only what the code does. Its texts ar
 The site is available in English (the default), Spanish, Tigrinya and Amharic.
 
 - **Where the texts are:** one file per language in [src/content/locales/](src/content/locales/): `en.ts`, `es.ts`, `ti.ts` and `am.ts`. English is the reference. A change to any text goes into all four files, and a test fails if a language is missing a text.
-- **Drafts:** the Spanish, Tigrinya and Amharic texts are drafts until they have been reviewed. Each draft has a note at the top of its file and `draft: true` in [src/content/languages.ts](src/content/languages.ts).
+- **Review:** the Spanish, Tigrinya and Amharic texts have been reviewed by the founder. A new or changed translation that hasn't been reviewed yet is a draft: it gets a `DRAFT – awaiting review` note at the top of its file and `draft: true` in [src/content/languages.ts](src/content/languages.ts). The privacy notice stays a draft for legal review in every language.
 - **The visitor's choice:** it is saved in the browser (`localStorage`), and the page's `lang` attribute changes with it. If the browser blocks storage, the site still switches language for that visit.
 - **Ethiopic script:** Tigrinya and Amharic use Noto Sans Ethiopic, from the `@fontsource-variable/noto-sans-ethiopic` package. The font is served with the site, so no third-party font service is involved.
 - **Contact form:** the form sends the visitor type and product as ids, plus the visitor's language. The email you receive is always in English and has a `Language:` line, for example `Language: Spanish (Español)`. The visitor's message arrives exactly as they wrote it.

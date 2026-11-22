@@ -1,6 +1,5 @@
-// DRAFT – awaiting review. Tigrinya translation of en.ts; it must say exactly
-// the same as the English. Remove this note and set draft to false for "ti"
-// in src/content/languages.ts once the translation has been reviewed.
+// Tigrinya translation of en.ts, reviewed by the founder; it must say exactly
+// the same as the English.
 import type { SiteContent } from '../types.js'
 
 export const ti: SiteContent = {
@@ -83,7 +82,7 @@ export const ti: SiteContent = {
         id: 'rights',
         heading: 'መሰላትኩም',
         paragraphs: [
-          'እዞም ዝስዕቡ መሰላት ኣለውኹም፦ ብዛዕባኹም ዘለና ውልቃዊ ሓበሬታ ምርኣይ (መሰል ምርካብ)፤ ከም ዝእረም ምግባር (መሰል ምእራም)፤ ከም ዝድምሰስ ምግባር (መሰል ምድምሳስ)፤ ኣጠቓቕማና ምቅዋም (መሰል ምቅዋም)፤ ኣጠቓቕማኡ ክንድረት ምሕታት (መሰል ምድራት)፤ ከምኡ ውን ዳግማይ ንምጥቃም ብዝሕግዝ ልሙድ ቅርፂ ምቕባል (መሰል ምግዕዓዝ)።',
+          'እዞም ዝስዕቡ መሰላት ኣለውኹም፦ ብዛዕባኹም ዘለና ውልቃዊ ሓበሬታ ምርኣይ (መሰል ምርካብ)፤ ከም ዝእረም ምግባር (መሰል ምእራም)፤ ከም ዝድምሰስ ምግባር (መሰል ምድምሳስ)፤ ኣጠቓቕማና ምቅዋም (መሰል ምቅዋም)፤ ኣጠቓቕምኡ ክንገድቦ ምሕታት (መሰል ምግዳብ)፤ ከምኡ ውን ዳግማይ ንምጥቃም ብዝሕግዝ ልሙድ ቅርፂ ምቕባል (መሰል ምግዕዓዝ)።',
           'ካብዞም መሰላት ንዝኾነ ንምጥቃም ናብ {email} ፅሓፉ። ብኢመይል ክንምልሰልኩም ኢና።',
         ],
       },

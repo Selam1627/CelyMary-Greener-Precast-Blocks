@@ -4,9 +4,9 @@
 
 export const languages = [
   { code: 'en', nativeName: 'English', englishName: 'English', draft: false },
-  { code: 'es', nativeName: 'Español', englishName: 'Spanish', draft: true },
-  { code: 'ti', nativeName: 'ትግርኛ', englishName: 'Tigrinya', draft: true },
-  { code: 'am', nativeName: 'አማርኛ', englishName: 'Amharic', draft: true },
+  { code: 'es', nativeName: 'Español', englishName: 'Spanish', draft: false },
+  { code: 'ti', nativeName: 'ትግርኛ', englishName: 'Tigrinya', draft: false },
+  { code: 'am', nativeName: 'አማርኛ', englishName: 'Amharic', draft: false },
 ] as const
 
 export type Language = (typeof languages)[number]
