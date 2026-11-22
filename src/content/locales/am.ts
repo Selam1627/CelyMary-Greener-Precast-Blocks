@@ -1,6 +1,5 @@
-// DRAFT – awaiting review. Amharic translation of en.ts; it must say exactly
-// the same as the English. Remove this note and set draft to false for "am"
-// in src/content/languages.ts once the translation has been reviewed.
+// Amharic translation of en.ts, reviewed by the founder; it must say exactly
+// the same as the English.
 import type { SiteContent } from '../types.js'
 
 export const am: SiteContent = {
@@ -21,20 +20,20 @@ export const am: SiteContent = {
   footer: {
     label: 'የገጹ ግርጌ',
     emailLabel: 'ኢሜይል፦',
-    privacyLink: 'የግላዊነት ማስታወቂያ',
+    privacyLink: 'የግላዊነት መግለጫ',
     copyright: '© 2026 ሰሊሜሪ አረንጓዴ ብሎኬት',
   },
 
   // DRAFT – legal review. The privacy notice must describe only what the
   // site really does; check the code before changing it.
   privacy: {
-    heading: 'የግላዊነት ማስታወቂያ',
-    intro: 'ይህ ማስታወቂያ ይህንን ድረ-ገጽ ሲጠቀሙ በግል መረጃዎ ላይ ምን እንደሚደረግ በቀላል ቃላት ያብራራል።',
+    heading: 'የግላዊነት መግለጫ',
+    intro: 'ይህ መግለጫ ይህንን ድረ-ገጽ ሲጠቀሙ በግል መረጃዎ ላይ ምን እንደሚደረግ በቀላል ቃላት ያብራራል።',
     emailFallback: 'የኩባንያው ኢሜይል',
     sections: [
       {
         id: 'responsible',
-        heading: 'ኃላፊነት',
+        heading: 'ኃላፊው ማን ነው',
         paragraphs: [
           'የግል መረጃዎ ኃላፊ፦ ሰላም በርሀ በየነ (Selam Berhe Beyene)፣ የሰሊሜሪ አረንጓዴ ብሎኬት መሥራች። በ{email} ሊያገኙን ይችላሉ።',
         ],
@@ -44,7 +43,7 @@ export const am: SiteContent = {
         heading: 'የምንሰበስበው መረጃ',
         paragraphs: [
           'የመገናኛ ቅጹን ሲልኩ ስምዎን፣ የኢሜይል አድራሻዎን፣ ማን እንደሆኑ (ለምሳሌ አርክቴክት ወይም ባለሀብት)፣ ከመረጡ የሚፈልጉትን ምርት፣ መልዕክትዎን እና ድረ-ገጹን ሲያነቡበት የነበረውን ቋንቋ እንቀበላለን።',
-          'ቅጹ አይፈለጌ መልዕክቶችን ለመከላከል ሁለት ራስ-ሰር ምርመራዎችንም ያደርጋል፦ ሰዎች ባዶ የሚተዉት የተደበቀ መስክ እና ቅጹን ለመሙላት የወሰደው ጊዜ። እነዚህ አይፈለጌ መልዕክቶችን ለማስቆም ብቻ ያገለግላሉ፤ አይቀመጡም፣ በኢሜይልም አይላኩም።',
+          'ቅጹ አላስፈላጊ መልእክቶችን (spam) ለመከላከል ሁለት ራስ-ሰር ፍተሻዎችንም ያደርጋል፦ ሰዎች ባዶ የሚተዉት የተደበቀ መስክ እና ቅጹን ለመሙላት የወሰደው ጊዜ። እነዚህ አላስፈላጊ መልእክቶችን ለማስቆም ብቻ ያገለግላሉ፤ አይቀመጡም፣ በኢሜይልም አይላኩም።',
           'ይህ ድረ-ገጽ ኩኪዎችን፣ የትንታኔ መሣሪያዎችን ወይም የማስታወቂያ መከታተያዎችን አይጠቀምም።',
         ],
       },
@@ -52,14 +51,14 @@ export const am: SiteContent = {
         id: 'purpose',
         heading: 'ለምን እንጠቀምበታለን',
         paragraphs: [
-          'መረጃዎን የምንጠቀመው መልዕክትዎን ለማንበብ እና እርስዎን ለመመለስ ብቻ ነው። ለማስታወቂያ አንጠቀምበትም፤ አንሸጠውም፤ ከታች ከተዘረዘሩት አገልግሎቶች ውጪ ለማንም አናስተላልፈውም።',
+          'መረጃዎን የምንጠቀመው መልዕክትዎን ለማንበብ እና ምላሽ ለመስጠት ብቻ ነው። ለማስታወቂያ አንጠቀምበትም፤ አንሸጠውም፤ ከታች ከተዘረዘሩት አገልግሎቶች ውጪ ለማንም አናስተላልፈውም።',
         ],
       },
       {
         id: 'legal-basis',
         heading: 'ሕጋዊ መሠረት',
         paragraphs: [
-          'ቅጹን በመላክ እንድንመልስልዎ ይጠይቁናል። መረጃዎን የምናስተናግደው ቅጹን ሲልኩ በሰጡት ፈቃድ መሠረት ነው (የአውሮፓ ኅብረት አጠቃላይ የመረጃ ጥበቃ ደንብ፣ GDPR፣ አንቀጽ 6(1)(a))። ፈቃድዎን በማንኛውም ጊዜ ወደ {email} በመጻፍ ማንሳት ይችላሉ። ይህ ከዚያ በፊት ያደረግነውን አይነካም።',
+          'ቅጹን በመላክ ምላሽ እንድንሰጥዎ ይጠይቁናል። መረጃዎን የምናስተናግደው ቅጹን ሲልኩ በሰጡት ፈቃድ መሠረት ነው (የአውሮፓ ኅብረት አጠቃላይ የመረጃ ጥበቃ ደንብ፣ GDPR፣ አንቀጽ 6(1)(a))። ፈቃድዎን በማንኛውም ጊዜ ወደ {email} በመጻፍ ማንሳት ይችላሉ። ፈቃድዎን ማንሳትዎ ከዚያ በፊት ያደረግነውን አይነካም።',
         ],
       },
       {
@@ -146,7 +145,7 @@ export const am: SiteContent = {
 
   products: {
     heading: 'ያቀድናቸው ምርቶች',
-    statusLabel: 'በልማት ላይ',
+    statusLabel: 'በዝግጅት ላይ',
     items: [
       {
         id: 'standard-building-blocks',
@@ -216,7 +215,7 @@ export const am: SiteContent = {
       },
       {
         id: 'research-and-lab-development',
-        title: 'ምርምር እና የቤተ ሙከራ ልማት',
+        title: 'ምርምር እና የቤተ ሙከራ ሥራ',
         note: 'ይህንን ምዕራፍ ለመጀመር የገንዘብ ድጋፍ እየፈለግን ነው።',
       },
       {
@@ -233,12 +232,12 @@ export const am: SiteContent = {
         name: 'ሰላም በርሀ በየነ',
         role: 'መሥራች',
         // REVIEW: written without a gendered verb form; adjust if needed.
-        bio: 'በካንታብሪያ ዩኒቨርሲቲ የሲሚንቶ ዘርፍን ካርቦን ልቀት በመቀነስ ላይ የፒኤችዲ ተመራማሪ።',
+        bio: 'በካንታብሪያ ዩኒቨርሲቲ በሲሚንቶ ዘርፍ የካርቦን ልቀት ቅነሳ ላይ የምትሠራ የፒኤችዲ ተመራማሪ።',
       },
       {
         name: 'ሜሮን ገብረስላሴ ታደሰ',
         role: 'ተባባሪ መሥራች',
-        bio: 'በፕሮጀክት አስተዳደር ዘርፍ ሙያዊ ልምድ።',
+        bio: 'በፕሮጀክት አስተዳደር ሙያዊ ልምድ አላት።',
       },
     ],
   },
@@ -268,8 +267,8 @@ export const am: SiteContent = {
     successMessage: 'እናመሰግናለን፣ መልዕክትዎ ተልኳል። በኢሜይል መልስ እንሰጥዎታለን።',
     failureMessage: 'ይቅርታ፣ መልዕክትዎ ሊላክ አልቻለም። እባክዎ ከጥቂት ደቂቃዎች በኋላ እንደገና ይሞክሩ፣ ወይም በቀጥታ ኢሜይል ይላኩልን።',
     directContactPrefix: 'ወይም በቀጥታ በዚህ አድራሻ ይጻፉልን፦',
-    privacyNote: 'መረጃዎን የምንጠቀመው እርስዎን ለመመለስ ብቻ ነው። የእኛን {link} ያንብቡ።',
-    privacyNoteLink: 'የግላዊነት ማስታወቂያ',
+    privacyNote: 'መረጃዎን የምንጠቀመው ምላሽ ለመስጠት ብቻ ነው። የእኛን {link} ያንብቡ።',
+    privacyNoteLink: 'የግላዊነት መግለጫ',
     spamTrapLabel: 'ይህንን መስክ ባዶ ይተዉት',
     errors: {
       nameRequired: 'እባክዎ ስምዎን ያስገቡ።',
