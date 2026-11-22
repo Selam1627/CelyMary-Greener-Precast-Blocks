@@ -233,14 +233,12 @@ export const es: SiteContent = {
     members: [
       {
         name: 'Selam Berhe Beyene',
-        // REVIEW: Spanish job titles are gendered. "Fundador" / "Cofundador"
-        // are placeholders; use "Fundadora" / "Cofundadora" where it applies.
-        role: 'Fundador',
-        bio: 'Investigación doctoral sobre la descarbonización del sector del cemento en la Universidad de Cantabria.',
+        role: 'Fundadora',
+        bio: 'Investigadora predoctoral en descarbonización del sector del cemento en la Universidad de Cantabria.',
       },
       {
         name: 'Meron Gebreselassie Tadesse',
-        role: 'Cofundador',
+        role: 'Cofundadora',
         bio: 'Aporta experiencia en gestión de proyectos.',
       },
     ],

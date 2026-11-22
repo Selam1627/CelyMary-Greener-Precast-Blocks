@@ -255,3 +255,91 @@ describe("the founder's bio", () => {
     },
   )
 })
+
+describe('translation review, round 1', () => {
+  // The founder's corrections: keep exactly as they are.
+  const ti = siteContent.ti
+  const es = siteContent.es
+  const tiTexts = texts(ti)
+  const privacyText = (code: 'ti' | 'es') =>
+    siteContent[code].privacy.sections.flatMap((part) => part.paragraphs).join(' ')
+
+  describe('Tigrinya', () => {
+    it('names the paving blocks "ናይ ወሰን ፅርግያ ምንፃፍ ብሎኬታት"', () => {
+      expect(ti.products.items.find((item) => item.id === 'paving-blocks')!.name).toBe(
+        'ናይ ወሰን ፅርግያ ምንፃፍ ብሎኬታት',
+      )
+    })
+
+    it('gives the founder and co-founder their roles, and the founder her bio', () => {
+      const [founder, coFounder] = ti.team.members
+
+      expect(founder!.role).toBe('መስራቲት')
+      expect(founder!.bio).toBe('ኣብ ዩኒቨርሲቲ ካንታብሪያ ብዛዕባ ምንካይ ካርቦን ኣብ ዘርፊ ሲሚንቶ ናይ ፒኤችዲ ተመራማሪት።')
+      expect(coFounder!.role).toBe('ተሓባባሪት መስራቲት')
+      expect(privacyText('ti')).toContain('ሰላም በርሀ በየነ (Selam Berhe Beyene)፣ መስራቲት ሰሊሜሪ')
+    })
+
+    it('uses "ልምዓታዊ በዓል ሃፍቲ" / "ልምዓታውያን በዓል ሃፍቲ" for investors', () => {
+      expect(ti.audiences.items.find((item) => item.id === 'investors')!.title).toBe(
+        'ንልምዓታውያን በዓል ሃፍቲ',
+      )
+      expect(ti.contact.visitorTypes.find((type) => type.id === 'investor')!.label).toBe(
+        'ልምዓታዊ በዓል ሃፍቲ',
+      )
+      expect(privacyText('ti')).toContain('ንኣብነት ኣርክቴክት ወይ ልምዓታዊ በዓል ሃፍቲ')
+    })
+
+    it('says Vercel and Gmail "የተኣናግድ"', () => {
+      expect(privacyText('ti').match(/የተኣናግድ/g)).toHaveLength(2)
+    })
+
+    it('writes Resend by its company name only, like Vercel and Google', () => {
+      const privacy = privacyText('ti')
+
+      expect(privacy).toContain('Resend ነቲ ቅጥዒ ርክብ ከም ኢመይል ናብ ሳንዱቕ ኢመይልና የብፅሖ።')
+      expect(privacy).toContain('Resend ብመሰረት ናይ ባዕሉ ፖሊሲ')
+      expect(privacy).not.toContain('ደጊምካ ምልኣኽ')
+      expect(privacy).not.toContain('(Resend)')
+    })
+
+    it('calls a website host "መተኣናገዲ መርበብ ሓበሬታ" in the Vercel paragraph', () => {
+      const vercel = ti.privacy.sections.find((part) => part.id === 'processors')!.paragraphs[0]
+
+      expect(vercel).toContain('ከም ዝኾነ መተኣናገዲ መርበብ ሓበሬታ፣ ብራውዘርኩም ገፅ ክፅዕን ከሎ')
+    })
+
+    it.each([
+      ['ናይ ንጣፍ ብሎኬታት', /ንጣፍ/],
+      ['መስራቲ (without ት)', /መስራቲ(?!ት)/u],
+      ['ተሓባባሪ (without ት)', /ተሓባባሪ(?!ት)/u],
+      ['ተመራማሪ (without ት)', /ተመራማሪ(?!ት)/u],
+      ['ወፍራዪ / ወፍረይቲ', /ወፍራ|ወፍረ/],
+      ['የእንግድ / የአንግድ', /የእንግድ|የአንግድ/],
+      ['ኣአንጋዲ', /ኣአንጋዲ/],
+      ['ፀርግያ (written ፅርግያ)', /ፀርግያ/],
+    ])('no longer contains "%s" anywhere', (_word, oldWord) => {
+      for (const [path, text] of tiTexts) {
+        expect(text, path).not.toMatch(oldWord)
+      }
+    })
+  })
+
+  describe('Spanish', () => {
+    it('gives the founder and co-founder their roles, and the founder her bio', () => {
+      const [founder, coFounder] = es.team.members
+
+      expect(founder!.role).toBe('Fundadora')
+      expect(founder!.bio).toBe(
+        'Investigadora predoctoral en descarbonización del sector del cemento en la Universidad de Cantabria.',
+      )
+      expect(coFounder!.role).toBe('Cofundadora')
+    })
+  })
+
+  it('keeps the Amharic team texts as they were', () => {
+    expect(siteContent.am.team.members[0]!.bio).toBe(
+      'በካንታብሪያ ዩኒቨርሲቲ የሲሚንቶ ዘርፍን ካርቦን ልቀት በመቀነስ ላይ የፒኤችዲ ተመራማሪ።',
+    )
+  })
+})
